@@ -1,0 +1,369 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ stock.symbol }} Details{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-4">
+            <i class="fas fa-chart-line text-primary me-2"></i>
+            {{ stock.symbol }}
+            {% if stock.name %}
+                <small class="text-muted">{{ stock.name }}</small>
+            {% endif %}
+        </h1>
+        <p class="lead">
+            View patterns, signals, and historical data for {{ stock.symbol }}.
+        </p>
+    </div>
+</div>
+
+<!-- Current Price and Fetch Data -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-dollar-sign me-2"></i>
+                    Current Market Data
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if current_data %}
+                    <div class="row">
+                        <div class="col-6">
+                            <h2 class="text-primary">${{ current_data.price | round(2) }}</h2>
+                            <p class="text-muted mb-0">Last Price</p>
+                        </div>
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <p><strong>Bid:</strong> ${{ current_data.bid | round(2) }}</p>
+                                <p><strong>Ask:</strong> ${{ current_data.ask | round(2) }}</p>
+                                <p><strong>Updated:</strong> {{ current_data.timestamp }}</p>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        No current market data available. Market may be closed or API connection is unavailable.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-download me-2"></i>
+                    Fetch Historical Data
+                </h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('fetch_historical_data') }}" method="post">
+                    <input type="hidden" name="symbol" value="{{ stock.symbol }}">
+                    <div class="mb-3">
+                        <label for="days" class="form-label">Days of History</label>
+                        <input type="number" class="form-control" id="days" name="days" min="1" max="365" value="30">
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-download me-2"></i>
+                            Fetch Data & Detect Patterns
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Price Chart -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-area me-2"></i>
+                    Price Chart
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-primary" onclick="updateChartTimeframe(7)">1W</button>
+                        <button type="button" class="btn btn-outline-primary" onclick="updateChartTimeframe(30)">1M</button>
+                        <button type="button" class="btn btn-outline-primary" onclick="updateChartTimeframe(90)">3M</button>
+                    </div>
+                </div>
+                <div style="height: 400px;">
+                    <canvas id="priceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Patterns and Signals -->
+<div class="row">
+    <!-- Detected Patterns -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-search me-2"></i>
+                    Detected Patterns
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if patterns %}
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-hover">
+                            <thead class="sticky-top bg-dark">
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Pattern</th>
+                                    <th>RSI</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pattern in patterns %}
+                                    <tr>
+                                        <td>{{ pattern.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            {% if pattern.pattern_type == 'doji' %}
+                                                <span class="badge bg-info">Doji</span>
+                                            {% elif pattern.pattern_type == 'hammer' %}
+                                                <span class="badge bg-warning">Hammer</span>
+                                            {% elif pattern.pattern_type == 'consecutive_bullish' %}
+                                                <span class="badge bg-success">Bullish Reversal</span>
+                                            {% elif pattern.pattern_type == 'consecutive_bearish' %}
+                                                <span class="badge bg-danger">Bearish Reversal</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ pattern.pattern_type }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if pattern.rsi_value %}
+                                                {% if pattern.rsi_value > 70 %}
+                                                    <span class="text-danger">{{ pattern.rsi_value | round(2) }}</span>
+                                                {% elif pattern.rsi_value < 30 %}
+                                                    <span class="text-success">{{ pattern.rsi_value | round(2) }}</span>
+                                                {% else %}
+                                                    {{ pattern.rsi_value | round(2) }}
+                                                {% endif %}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-info" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ pattern.description }}">
+                                                <i class="fas fa-info-circle"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        No patterns detected. Fetch data to detect patterns.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Trading Signals -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-bell me-2"></i>
+                    Trading Signals
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if signals %}
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-hover">
+                            <thead class="sticky-top bg-dark">
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Signal</th>
+                                    <th>Price</th>
+                                    <th>Confidence</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for signal in signals %}
+                                    <tr>
+                                        <td>{{ signal.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            {% if signal.signal_type == 'buy' %}
+                                                <span class="badge bg-success">Buy</span>
+                                            {% elif signal.signal_type == 'short' %}
+                                                <span class="badge bg-danger">Short</span>
+                                            {% elif signal.signal_type == 'sell' %}
+                                                <span class="badge bg-danger">Sell</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ signal.signal_type }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>${{ signal.price_at_signal | round(2) }}</td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar 
+                                                    {% if signal.signal_type == 'buy' %}bg-success
+                                                    {% elif signal.signal_type == 'short' or signal.signal_type == 'sell' %}bg-danger
+                                                    {% else %}bg-secondary{% endif %}" 
+                                                    role="progressbar" 
+                                                    style="width: {{ (signal.confidence * 100) | round }}%;" 
+                                                    aria-valuenow="{{ (signal.confidence * 100) | round }}" 
+                                                    aria-valuemin="0" 
+                                                    aria-valuemax="100">
+                                                    {{ (signal.confidence * 100) | round }}%
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <form action="{{ url_for('execute_trade') }}" method="post">
+                                                <input type="hidden" name="signal_id" value="{{ signal.id }}">
+                                                <button type="submit" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-check-circle"></i> Execute
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        No trading signals available. Generate signals to see them here.
+                    </div>
+                {% endif %}
+                <div class="mt-3">
+                    <form action="{{ url_for('generate_signals') }}" method="post">
+                        <input type="hidden" name="symbol" value="{{ stock.symbol }}">
+                        <div class="mb-3">
+                            <label for="model_id" class="form-label">Select Model for Signal Generation</label>
+                            <select class="form-select" id="model_id" name="model_id" required>
+                                <option value="" selected disabled>Select a model</option>
+                                {% for model in models %}
+                                    <option value="{{ model.id }}">{{ model.model_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-robot me-2"></i>
+                                Generate Signal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Trades -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-exchange-alt me-2"></i>
+                    Recent Trades
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if trades %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Action</th>
+                                    <th>Quantity</th>
+                                    <th>Price</th>
+                                    <th>P&L</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for trade in trades %}
+                                    <tr>
+                                        <td>{{ trade.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            {% if trade.action == 'buy' %}
+                                                <span class="badge bg-success">Buy</span>
+                                            {% elif trade.action == 'sell' %}
+                                                <span class="badge bg-danger">Sell</span>
+                                            {% elif trade.action == 'short' %}
+                                                <span class="badge bg-danger">Short</span>
+                                            {% elif trade.action == 'cover' %}
+                                                <span class="badge bg-success">Cover</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ trade.quantity }}</td>
+                                        <td>${{ trade.price | round(2) }}</td>
+                                        <td>
+                                            {% if trade.pnl %}
+                                                {% if trade.pnl > 0 %}
+                                                    <span class="text-success">+${{ trade.pnl | round(2) }}</span>
+                                                {% else %}
+                                                    <span class="text-danger">-${{ (-trade.pnl) | round(2) }}</span>
+                                                {% endif %}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if trade.status == 'open' %}
+                                                <span class="badge bg-warning">Open</span>
+                                            {% else %}
+                                                <span class="badge bg-success">Closed</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        No trades executed yet.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+    
+    // Load price chart when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        loadStockChart('{{ stock.symbol }}', 30);
+    });
+    
+    // Function to update chart timeframe
+    function updateChartTimeframe(days) {
+        loadStockChart('{{ stock.symbol }}', days);
+    }
+</script>
+{% endblock %}

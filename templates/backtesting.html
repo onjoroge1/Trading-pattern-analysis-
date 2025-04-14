@@ -1,0 +1,142 @@
+{% extends "layout.html" %}
+
+{% block title %}Backtesting{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-4">
+            <i class="fas fa-history text-primary me-2"></i>
+            Backtesting
+        </h1>
+        <p class="lead">
+            Test your trained models against historical data to evaluate performance.
+        </p>
+    </div>
+</div>
+
+<!-- Backtest Form -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-vial me-2"></i>
+                    Run a Backtest
+                </h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('run_backtest') }}" method="post">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="symbol" class="form-label">Select Stock</label>
+                                <select class="form-select" id="symbol" name="symbol" required>
+                                    <option value="" selected disabled>Choose a stock</option>
+                                    {% if stocks %}
+                                        {% for stock in stocks %}
+                                            <option value="{{ stock.symbol }}">{{ stock.symbol }}</option>
+                                        {% endfor %}
+                                    {% else %}
+                                        <option value="AAPL">AAPL</option>
+                                        <option value="MSFT">MSFT</option>
+                                        <option value="NVDA">NVDA</option>
+                                        <option value="AMD">AMD</option>
+                                        <option value="TSLA">TSLA</option>
+                                    {% endif %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="model_id" class="form-label">Select Model</label>
+                                <select class="form-select" id="model_id" name="model_id" required>
+                                    <option value="" selected disabled>Choose a model</option>
+                                    {% if models %}
+                                        {% for model in models %}
+                                            <option value="{{ model.id }}" {% if request.args.get('model_id')|int == model.id %}selected{% endif %}>
+                                                {{ model.model_name }}
+                                            </option>
+                                        {% endfor %}
+                                    {% endif %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="days" class="form-label">Test Period (Days)</label>
+                                <input type="number" class="form-control" id="days" name="days" min="7" max="90" value="30">
+                                <div class="form-text">Historical data to test against</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-grid mt-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-play-circle me-2"></i>
+                            Run Backtest
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Backtest Results Placeholder -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Backtest Results
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Select a stock and model above to run a backtest. Results will be displayed here.
+                </div>
+                
+                <!-- Results will be populated here after running a backtest -->
+                <div id="backtest-results-container"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Backtesting Info -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    About Backtesting
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>
+                    Backtesting is the process of testing a trading strategy on historical data to see how it would have performed.
+                    This helps evaluate the effectiveness of your trained RL models before deploying them in live trading.
+                </p>
+                
+                <h5>How it works:</h5>
+                <ol>
+                    <li>Historical data is fetched for the selected stock and time period.</li>
+                    <li>Technical indicators and patterns are calculated on this data.</li>
+                    <li>The trained RL model generates trading signals based on these patterns.</li>
+                    <li>A simulated portfolio tracks the performance of these signals.</li>
+                    <li>Results are displayed as equity curves, trade statistics, and performance metrics.</li>
+                </ol>
+                
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Note:</strong> Past performance is not indicative of future results. Backtesting has inherent limitations, including 
+                    look-ahead bias and the absence of market impact costs. Always use backtesting as one of several evaluation tools.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

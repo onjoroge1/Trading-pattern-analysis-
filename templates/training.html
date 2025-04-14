@@ -1,0 +1,183 @@
+{% extends "layout.html" %}
+
+{% block title %}Training{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-4">
+            <i class="fas fa-graduation-cap text-primary me-2"></i>
+            Reinforcement Learning Training
+        </h1>
+        <p class="lead">
+            Train RL models to evaluate and predict profitable reversal patterns.
+        </p>
+    </div>
+</div>
+
+<!-- Training Form -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-cogs me-2"></i>
+                    Train New Model
+                </h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('train_model') }}" method="post">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="stocks" class="form-label">Select Stocks for Training</label>
+                                <select class="form-select" id="stocks" name="stocks" multiple required size="5">
+                                    {% if stocks %}
+                                        {% for stock in stocks %}
+                                            <option value="{{ stock.symbol }}">{{ stock.symbol }}</option>
+                                        {% endfor %}
+                                    {% else %}
+                                        <option value="AAPL">AAPL</option>
+                                        <option value="MSFT">MSFT</option>
+                                        <option value="NVDA">NVDA</option>
+                                        <option value="AMD">AMD</option>
+                                        <option value="TSLA">TSLA</option>
+                                    {% endif %}
+                                </select>
+                                <div class="form-text">Hold Ctrl/Cmd to select multiple stocks</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="days" class="form-label">Days of Historical Data</label>
+                                <input type="number" class="form-control" id="days" name="days" min="30" max="365" value="180">
+                                <div class="form-text">Recommended: 180-365 days for better results</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="episodes" class="form-label">Training Episodes</label>
+                                <input type="number" class="form-control" id="episodes" name="episodes" min="100" max="10000" value="1000">
+                                <div class="form-text">Higher values may improve results but take longer</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="learning_rate" class="form-label">Learning Rate</label>
+                                <select class="form-select" id="learning_rate" name="learning_rate">
+                                    <option value="0.0001">0.0001 (Very Conservative)</option>
+                                    <option value="0.0003" selected>0.0003 (Recommended)</option>
+                                    <option value="0.001">0.001 (Aggressive)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Training can take several minutes depending on the amount of data and episodes selected.
+                    </div>
+                    <div class="d-grid mt-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-play-circle me-2"></i>
+                            Start Training
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Training Sessions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-history me-2"></i>
+                    Previous Training Sessions
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if training_sessions %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Model Name</th>
+                                    <th>Stocks Used</th>
+                                    <th>Date Range</th>
+                                    <th>Episodes</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for session in training_sessions %}
+                                    <tr>
+                                        <td>{{ session.model_name }}</td>
+                                        <td>{{ session.stocks_used }}</td>
+                                        <td>{{ session.start_date.strftime('%Y-%m-%d') }} to {{ session.end_date.strftime('%Y-%m-%d') }}</td>
+                                        <td>{{ session.total_episodes }}</td>
+                                        <td>{{ session.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            <a href="{{ url_for('backtesting') }}?model_id={{ session.id }}" class="btn btn-sm btn-info">
+                                                <i class="fas fa-vial"></i> Backtest
+                                            </a>
+                                            <a href="{{ url_for('live_trading') }}?model_id={{ session.id }}" class="btn btn-sm btn-success">
+                                                <i class="fas fa-play"></i> Use
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        No training sessions found. Train your first model to get started.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Technical Details -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    About the RL Training Process
+                </h5>
+            </div>
+            <div class="card-body">
+                <h5>Reinforcement Learning Strategy</h5>
+                <p>
+                    The training process uses Proximal Policy Optimization (PPO) to learn which reversal patterns are most profitable. 
+                    The agent observes the market, learns from its actions, and optimizes for maximum profit.
+                </p>
+                
+                <h5>State Vector (10 inputs):</h5>
+                <ul>
+                    <li>Current price</li>
+                    <li>RSI value</li>
+                    <li>Is Doji pattern (0 or 1)</li>
+                    <li>Is Hammer pattern (0 or 1)</li>
+                    <li>Current position (long, short, or flat)</li>
+                    <li>Distance from Opening Range Breakout (ORB) high</li>
+                    <li>Distance from Opening Range Breakout (ORB) low</li>
+                    <li>Boolean: price above ORB high</li>
+                    <li>Boolean: price below ORB low</li>
+                    <li>Boolean: within market open time (9:30–10:00)</li>
+                </ul>
+                
+                <h5>Special Rules</h5>
+                <ul>
+                    <li><strong>RSI Interpretation:</strong> During standard market hours (after 10:00 AM), RSI > 70 is overbought (favor short) and RSI < 30 is oversold (favor long). However, during market open (9:30-10:00 AM), the interpretation is reversed to capture momentum.</li>
+                    <li><strong>15-Minute ORB:</strong> The high and low of the first 15 minutes (9:30-9:45 AM) provide key support and resistance levels.</li>
+                    <li><strong>Consecutive Candles:</strong> 3+ consecutive bullish or bearish candles can signal potential reversals.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

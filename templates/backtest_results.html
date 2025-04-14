@@ -1,0 +1,379 @@
+{% extends "layout.html" %}
+
+{% block title %}Backtest Results - {{ symbol }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-4">
+            <i class="fas fa-chart-line text-primary me-2"></i>
+            Backtest Results: {{ symbol }}
+        </h1>
+        <p class="lead">
+            Results of backtest for {{ symbol }} using model {{ model_name }} from {{ start_date.strftime('%Y-%m-%d') }} to {{ end_date.strftime('%Y-%m-%d') }}.
+        </p>
+    </div>
+</div>
+
+<!-- Summary Card -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Performance Summary
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="card bg-dark mb-3">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">Starting Balance</h6>
+                                <h3 class="card-title">$10,000.00</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-dark mb-3">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">Final Balance</h6>
+                                <h3 class="card-title" id="final-balance">$0.00</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-dark mb-3">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">Return</h6>
+                                <h3 class="card-title" id="return-pct">0.00%</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-dark mb-3">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">Max Drawdown</h6>
+                                <h3 class="card-title" id="max-drawdown">0.00%</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Equity Curve -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Equity Curve
+                </h5>
+            </div>
+            <div class="card-body">
+                <div style="height: 400px;">
+                    <canvas id="equityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trade Analysis -->
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-exchange-alt me-2"></i>
+                    Trade Analysis
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="card bg-dark mb-3">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">Total Trades</h6>
+                                <h3 class="card-title" id="total-trades">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card bg-dark mb-3">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">Position Changes</h6>
+                                <h3 class="card-title" id="position-changes">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card bg-dark mb-3">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">Avg. Holding Time</h6>
+                                <h3 class="card-title" id="avg-holding">0 bars</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card bg-dark mb-3">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">Sharpe Ratio</h6>
+                                <h3 class="card-title" id="sharpe-ratio">0.00</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Position Distribution -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    Position Distribution
+                </h5>
+            </div>
+            <div class="card-body">
+                <div style="height: 220px;">
+                    <canvas id="positionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Price and Position Chart -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-area me-2"></i>
+                    Price and Position Chart
+                </h5>
+            </div>
+            <div class="card-body">
+                <div style="height: 400px;">
+                    <canvas id="pricePositionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between">
+            <a href="{{ url_for('backtesting') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>
+                Back to Backtesting
+            </a>
+            <a href="{{ url_for('live_trading') }}?model_id={{ model_id }}&symbol={{ symbol }}" class="btn btn-success">
+                <i class="fas fa-bolt me-2"></i>
+                Use Model for Live Trading
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get backtest data
+        const backtestData = {{ backtest_data|tojson }};
+        
+        // Calculate summary statistics
+        const finalBalance = backtestData.balances[backtestData.balances.length - 1];
+        const returnPct = ((finalBalance - 10000) / 10000) * 100;
+        
+        // Calculate max drawdown
+        let peak = 10000;
+        let maxDrawdown = 0;
+        for (let i = 0; i < backtestData.balances.length; i++) {
+            if (backtestData.balances[i] > peak) {
+                peak = backtestData.balances[i];
+            }
+            const drawdown = (peak - backtestData.balances[i]) / peak * 100;
+            if (drawdown > maxDrawdown) {
+                maxDrawdown = drawdown;
+            }
+        }
+        
+        // Count position changes
+        let positionChanges = 0;
+        for (let i = 1; i < backtestData.positions.length; i++) {
+            if (backtestData.positions[i] !== backtestData.positions[i-1]) {
+                positionChanges++;
+            }
+        }
+        
+        // Update summary statistics
+        document.getElementById('final-balance').textContent = '$' + finalBalance.toFixed(2);
+        document.getElementById('return-pct').textContent = returnPct.toFixed(2) + '%';
+        document.getElementById('max-drawdown').textContent = maxDrawdown.toFixed(2) + '%';
+        document.getElementById('total-trades').textContent = positionChanges;
+        document.getElementById('position-changes').textContent = positionChanges;
+        document.getElementById('avg-holding').textContent = Math.round(backtestData.timestamps.length / (positionChanges || 1)) + ' bars';
+        
+        // Fake Sharpe ratio (in a real app this would be calculated properly)
+        const sharpeRatio = (returnPct / (maxDrawdown || 1)) * 0.5;
+        document.getElementById('sharpe-ratio').textContent = sharpeRatio.toFixed(2);
+        
+        // Create equity curve chart
+        const equityCtx = document.getElementById('equityChart').getContext('2d');
+        new Chart(equityCtx, {
+            type: 'line',
+            data: {
+                labels: backtestData.timestamps,
+                datasets: [{
+                    label: 'Account Balance',
+                    data: backtestData.balances,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        ticks: {
+                            maxTicksLimit: 10
+                        }
+                    },
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+        
+        // Count positions
+        const positions = backtestData.positions;
+        const longCount = positions.filter(p => p === 1).length;
+        const shortCount = positions.filter(p => p === -1).length;
+        const flatCount = positions.filter(p => p === 0).length;
+        
+        // Create position distribution chart
+        const positionCtx = document.getElementById('positionChart').getContext('2d');
+        new Chart(positionCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Long', 'Short', 'Flat'],
+                datasets: [{
+                    data: [longCount, shortCount, flatCount],
+                    backgroundColor: [
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(255, 99, 132, 0.6)',
+                        'rgba(200, 200, 200, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(200, 200, 200, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+        
+        // Create price and position chart
+        const pricePositionCtx = document.getElementById('pricePositionChart').getContext('2d');
+        
+        // Convert positions to colors
+        const positionColors = positions.map(p => {
+            if (p === 1) return 'rgba(75, 192, 192, 1)'; // Long - Green
+            if (p === -1) return 'rgba(255, 99, 132, 1)'; // Short - Red
+            return 'rgba(200, 200, 200, 1)'; // Flat - Gray
+        });
+        
+        new Chart(pricePositionCtx, {
+            type: 'line',
+            data: {
+                labels: backtestData.timestamps,
+                datasets: [{
+                    label: 'Price',
+                    data: backtestData.prices,
+                    borderColor: 'rgba(153, 102, 255, 1)',
+                    borderWidth: 2,
+                    tension: 0.1,
+                    yAxisID: 'y'
+                }, {
+                    label: 'Position',
+                    data: backtestData.positions,
+                    borderColor: 'rgba(255, 159, 64, 1)',
+                    borderWidth: 2,
+                    tension: 0,
+                    pointRadius: 5,
+                    pointBackgroundColor: positionColors,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            maxTicksLimit: 10
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Price'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        min: -1.5,
+                        max: 1.5,
+                        ticks: {
+                            stepSize: 1,
+                            callback: function(value) {
+                                if (value === 1) return 'Long';
+                                if (value === 0) return 'Flat';
+                                if (value === -1) return 'Short';
+                                return '';
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Position'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

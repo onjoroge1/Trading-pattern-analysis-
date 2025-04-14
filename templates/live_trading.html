@@ -1,0 +1,336 @@
+{% extends "layout.html" %}
+
+{% block title %}Live Trading{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-4">
+            <i class="fas fa-bolt text-primary me-2"></i>
+            Live Trading
+        </h1>
+        <p class="lead">
+            Use trained RL models to generate real-time trading signals.
+        </p>
+    </div>
+</div>
+
+<!-- Market Status and Account Info -->
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock me-2"></i>
+                    Market Status
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if market_hours %}
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5>Current Status:</h5>
+                        {% if market_hours.is_open %}
+                            <span class="badge bg-success">Market Open</span>
+                        {% else %}
+                            <span class="badge bg-danger">Market Closed</span>
+                        {% endif %}
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <p><strong>Next Open:</strong> {{ market_hours.next_open | replace('T', ' ') }}</p>
+                        </div>
+                        <div class="col-6">
+                            <p><strong>Next Close:</strong> {{ market_hours.next_close | replace('T', ' ') }}</p>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning">
+                        Unable to fetch market hours. Please check API credentials.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Account Info -->
+    <div class="col-lg-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-wallet me-2"></i>
+                    Account Information
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if account_info %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h5 class="text-primary">${{ account_info.equity | float | round(2) }}</h5>
+                                <p class="text-muted mb-0">Equity</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h5 class="text-primary">${{ account_info.buying_power | float | round(2) }}</h5>
+                                <p class="text-muted mb-0">Buying Power</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h5 class="text-primary">${{ account_info.cash | float | round(2) }}</h5>
+                                <p class="text-muted mb-0">Cash</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h5 class="text-primary">{{ account_info.status }}</h5>
+                                <p class="text-muted mb-0">Status</p>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning">
+                        Unable to fetch account information. Please check API credentials.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Generate Signals -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-robot me-2"></i>
+                    Generate Trading Signals
+                </h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('generate_signals') }}" method="post">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="symbol" class="form-label">Select Stock</label>
+                                <select class="form-select" id="symbol" name="symbol" required>
+                                    <option value="" selected disabled>Choose a stock</option>
+                                    {% if stocks %}
+                                        {% for stock in stocks %}
+                                            <option value="{{ stock.symbol }}" {% if request.args.get('symbol') == stock.symbol %}selected{% endif %}>{{ stock.symbol }}</option>
+                                        {% endfor %}
+                                    {% else %}
+                                        <option value="AAPL">AAPL</option>
+                                        <option value="MSFT">MSFT</option>
+                                        <option value="NVDA">NVDA</option>
+                                        <option value="AMD">AMD</option>
+                                        <option value="TSLA">TSLA</option>
+                                    {% endif %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="model_id" class="form-label">Select Model</label>
+                                <select class="form-select" id="model_id" name="model_id" required>
+                                    <option value="" selected disabled>Choose a model</option>
+                                    {% if models %}
+                                        {% for model in models %}
+                                            <option value="{{ model.id }}" {% if request.args.get('model_id')|int == model.id %}selected{% endif %}>
+                                                {{ model.model_name }}
+                                            </option>
+                                        {% endfor %}
+                                    {% endif %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary" {% if not market_hours or not market_hours.is_open %}disabled{% endif %}>
+                            <i class="fas fa-robot me-2"></i>
+                            Generate Signal Now
+                        </button>
+                        {% if not market_hours or not market_hours.is_open %}
+                            <small class="form-text text-warning">Market is currently closed. Signal generation may not be accurate.</small>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Current Positions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-briefcase me-2"></i>
+                    Current Positions
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if positions %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Quantity</th>
+                                    <th>Side</th>
+                                    <th>Avg Entry</th>
+                                    <th>Current Price</th>
+                                    <th>Market Value</th>
+                                    <th>Unrealized P&L</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for position in positions %}
+                                    <tr>
+                                        <td>
+                                            <a href="{{ url_for('stock_detail', symbol=position.symbol) }}">
+                                                {{ position.symbol }}
+                                            </a>
+                                        </td>
+                                        <td>{{ position.qty }}</td>
+                                        <td>
+                                            {% if position.side == 'long' %}
+                                                <span class="badge bg-success">Long</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Short</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>${{ position.avg_entry_price | float | round(2) }}</td>
+                                        <td>${{ position.current_price | float | round(2) }}</td>
+                                        <td>${{ position.market_value | float | round(2) }}</td>
+                                        <td>
+                                            {% if position.unrealized_pl > 0 %}
+                                                <span class="text-success">+${{ position.unrealized_pl | float | round(2) }}</span>
+                                            {% else %}
+                                                <span class="text-danger">-${{ (-position.unrealized_pl) | float | round(2) }}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        No open positions.
+                    </div>
+                {% endif %}
+                <div class="d-flex justify-content-end mt-3">
+                    <button class="btn btn-outline-primary" id="refresh-positions">
+                        <i class="fas fa-sync-alt me-2"></i>
+                        Refresh Positions
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Signals -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-bell me-2"></i>
+                    Recent Trading Signals
+                </h5>
+            </div>
+            <div class="card-body" id="recent-signals-container">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Generate signals to see them here. Recent signals from all stocks will be displayed.
+                </div>
+                
+                <!-- This will be populated via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trading Notes -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Live Trading Notes
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Important:</strong> Always monitor your trades and use proper risk management.
+                </div>
+                
+                <h5>Reversal Pattern Strategy Rules</h5>
+                <ol>
+                    <li><strong>Pattern Detection:</strong>
+                        <ul>
+                            <li>Look for 3+ consecutive bullish or bearish candles</li>
+                            <li>Detect Doji and Hammer candlestick patterns</li>
+                        </ul>
+                    </li>
+                    <li><strong>RSI Interpretation:</strong>
+                        <ul>
+                            <li><strong>Standard Time (after 10:00 AM):</strong> RSI > 70 = overbought (favor short), RSI < 30 = oversold (favor long)</li>
+                            <li><strong>Opening Time (9:30-10:00 AM):</strong> RSI > 70 = bullish momentum (favor long), RSI < 30 = bearish momentum (favor short)</li>
+                        </ul>
+                    </li>
+                    <li><strong>Opening Range Breakout (ORB):</strong>
+                        <ul>
+                            <li>High/low between 9:30-9:45 AM sets the range</li>
+                            <li>Above ORB High = bullish bias</li>
+                            <li>Below ORB Low = bearish bias</li>
+                        </ul>
+                    </li>
+                </ol>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    The RL model has learned which patterns are most profitable based on historical data. It combines all these factors to generate optimal trading signals.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Refresh market status and account info every 30 seconds
+    setInterval(function() {
+        if (typeof refreshMarketStatus === 'function') {
+            refreshMarketStatus();
+        }
+        if (typeof refreshAccountInfo === 'function') {
+            refreshAccountInfo();
+        }
+    }, 30000);
+    
+    // Refresh positions when button is clicked
+    document.getElementById('refresh-positions').addEventListener('click', function() {
+        if (typeof refreshPositions === 'function') {
+            refreshPositions();
+        } else {
+            location.reload();
+        }
+    });
+    
+    // Load recent signals on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof loadRecentSignals === 'function') {
+            loadRecentSignals();
+        }
+    });
+</script>
+{% endblock %}

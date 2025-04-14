@@ -1,0 +1,113 @@
+{% extends "layout.html" %}
+
+{% block title %}Stocks{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-4">
+            <i class="fas fa-list text-primary me-2"></i>
+            Stocks
+        </h1>
+        <p class="lead">
+            Manage stocks for pattern detection and trading.
+        </p>
+    </div>
+</div>
+
+<!-- Add Stock Form -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-plus me-2"></i>
+                    Add New Stock
+                </h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('add_stock') }}" method="post">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="symbol" class="form-label">Symbol</label>
+                                <input type="text" class="form-control" id="symbol" name="symbol" placeholder="AAPL" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Name (Optional)</label>
+                                <input type="text" class="form-control" id="name" name="name" placeholder="Apple Inc.">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Add Stock</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stock List -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-table me-2"></i>
+                    Stock List
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if stocks %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Name</th>
+                                    <th>Status</th>
+                                    <th>Added On</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stock in stocks %}
+                                    <tr>
+                                        <td>
+                                            <a href="{{ url_for('stock_detail', symbol=stock.symbol) }}">
+                                                {{ stock.symbol }}
+                                            </a>
+                                        </td>
+                                        <td>{{ stock.name or 'N/A' }}</td>
+                                        <td>
+                                            {% if stock.active %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ stock.created_at.strftime('%Y-%m-%d') }}</td>
+                                        <td>
+                                            <a href="{{ url_for('stock_detail', symbol=stock.symbol) }}" class="btn btn-sm btn-primary">
+                                                <i class="fas fa-eye"></i> View
+                                            </a>
+                                            <!-- Edit button could be added here -->
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        No stocks found. Add a stock to get started.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

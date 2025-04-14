@@ -1,0 +1,282 @@
+{% extends "layout.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-4">
+            <i class="fas fa-chart-line text-primary me-2"></i>
+            Trading Dashboard
+        </h1>
+        <p class="lead">
+            Monitor trading activities, patterns, and signals in real-time.
+        </p>
+    </div>
+</div>
+
+<!-- Market Status -->
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock me-2"></i>
+                    Market Status
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if market_hours %}
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5>Current Status:</h5>
+                        {% if market_hours.is_open %}
+                            <span class="badge bg-success">Market Open</span>
+                        {% else %}
+                            <span class="badge bg-danger">Market Closed</span>
+                        {% endif %}
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <p><strong>Next Open:</strong> {{ market_hours.next_open | replace('T', ' ') }}</p>
+                        </div>
+                        <div class="col-6">
+                            <p><strong>Next Close:</strong> {{ market_hours.next_close | replace('T', ' ') }}</p>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning">
+                        Unable to fetch market hours. Please check API credentials.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Account Info -->
+    <div class="col-lg-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-wallet me-2"></i>
+                    Account Information
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if account_info %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h5 class="text-primary">${{ account_info.equity | float | round(2) }}</h5>
+                                <p class="text-muted mb-0">Equity</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h5 class="text-primary">${{ account_info.buying_power | float | round(2) }}</h5>
+                                <p class="text-muted mb-0">Buying Power</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h5 class="text-primary">${{ account_info.cash | float | round(2) }}</h5>
+                                <p class="text-muted mb-0">Cash</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h5 class="text-primary">{{ account_info.status }}</h5>
+                                <p class="text-muted mb-0">Status</p>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning">
+                        Unable to fetch account information. Please check API credentials.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Fetch Data Form -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-database me-2"></i>
+                    Fetch Historical Data
+                </h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('fetch_historical_data') }}" method="post">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="symbol" class="form-label">Symbol</label>
+                                <select class="form-select" id="symbol" name="symbol" required>
+                                    <option value="" selected disabled>Select a stock</option>
+                                    {% if stocks %}
+                                        {% for stock in stocks %}
+                                            <option value="{{ stock.symbol }}">{{ stock.symbol }}</option>
+                                        {% endfor %}
+                                    {% endif %}
+                                    <option value="AAPL">AAPL</option>
+                                    <option value="MSFT">MSFT</option>
+                                    <option value="NVDA">NVDA</option>
+                                    <option value="AMD">AMD</option>
+                                    <option value="TSLA">TSLA</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="days" class="form-label">Days of History</label>
+                                <input type="number" class="form-control" id="days" name="days" min="1" max="365" value="30">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-download me-2"></i>
+                            Fetch Data & Detect Patterns
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Signals and Trades -->
+<div class="row">
+    <!-- Recent Signals -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-bell me-2"></i>
+                    Recent Signals
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_signals %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Timestamp</th>
+                                    <th>Signal</th>
+                                    <th>Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for signal, stock in recent_signals %}
+                                    <tr>
+                                        <td>
+                                            <a href="{{ url_for('stock_detail', symbol=stock.symbol) }}">
+                                                {{ stock.symbol }}
+                                            </a>
+                                        </td>
+                                        <td>{{ signal.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            {% if signal.signal_type == 'buy' %}
+                                                <span class="badge bg-success">Buy</span>
+                                            {% elif signal.signal_type == 'sell' %}
+                                                <span class="badge bg-danger">Sell</span>
+                                            {% elif signal.signal_type == 'short' %}
+                                                <span class="badge bg-danger">Short</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Hold</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>${{ signal.price_at_signal | round(2) }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        No recent signals. Fetch data and generate signals to see them here.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Trades -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-exchange-alt me-2"></i>
+                    Recent Trades
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_trades %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Timestamp</th>
+                                    <th>Action</th>
+                                    <th>Quantity</th>
+                                    <th>Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for trade, stock in recent_trades %}
+                                    <tr>
+                                        <td>
+                                            <a href="{{ url_for('stock_detail', symbol=stock.symbol) }}">
+                                                {{ stock.symbol }}
+                                            </a>
+                                        </td>
+                                        <td>{{ trade.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            {% if trade.action == 'buy' %}
+                                                <span class="badge bg-success">Buy</span>
+                                            {% elif trade.action == 'sell' %}
+                                                <span class="badge bg-danger">Sell</span>
+                                            {% elif trade.action == 'short' %}
+                                                <span class="badge bg-danger">Short</span>
+                                            {% elif trade.action == 'cover' %}
+                                                <span class="badge bg-success">Cover</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ trade.quantity }}</td>
+                                        <td>${{ trade.price | round(2) }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        No recent trades. Execute trades to see them here.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Refresh market status and account info every 30 seconds
+    setInterval(function() {
+        if (typeof refreshMarketStatus === 'function') {
+            refreshMarketStatus();
+        }
+        if (typeof refreshAccountInfo === 'function') {
+            refreshAccountInfo();
+        }
+    }, 30000);
+</script>
+{% endblock %}

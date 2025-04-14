@@ -1,0 +1,165 @@
+/* 
+ * Custom styles for the Trading System
+ * 
+ * Note: Minimal custom CSS is used since we're primarily using Bootstrap's styling
+ */
+
+/* Add some subtle animation to refresh icons */
+.fa-sync-alt {
+    transition: transform 0.5s ease;
+}
+
+.fa-sync-alt:hover {
+    transform: rotate(180deg);
+}
+
+/* Improve spacing in tables */
+.table td, .table th {
+    vertical-align: middle;
+}
+
+/* Styling for candlestick charts */
+.candlestick-up {
+    fill: rgba(75, 192, 192, 0.2);
+    stroke: rgba(75, 192, 192, 1);
+}
+
+.candlestick-down {
+    fill: rgba(255, 99, 132, 0.2);
+    stroke: rgba(255, 99, 132, 1);
+}
+
+/* Pattern badge indicators */
+.pattern-badge {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+.pattern-doji {
+    background-color: #17a2b8;
+}
+
+.pattern-hammer {
+    background-color: #ffc107;
+}
+
+.pattern-bullish {
+    background-color: #28a745;
+}
+
+.pattern-bearish {
+    background-color: #dc3545;
+}
+
+/* Card hover effects */
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Sticky headers for long tables */
+.table-responsive {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.sticky-top.bg-dark {
+    z-index: 1020;
+    position: sticky;
+    top: 0;
+}
+
+/* Custom styling for form elements */
+select.form-select[multiple] {
+    height: auto;
+    min-height: 120px;
+}
+
+/* Chart container styles */
+.chart-container {
+    position: relative;
+    height: 400px;
+    width: 100%;
+}
+
+/* Position indicators in charts */
+.position-long {
+    background-color: rgba(75, 192, 192, 0.5);
+    border: 1px solid rgba(75, 192, 192, 1);
+}
+
+.position-short {
+    background-color: rgba(255, 99, 132, 0.5);
+    border: 1px solid rgba(255, 99, 132, 1);
+}
+
+.position-flat {
+    background-color: rgba(200, 200, 200, 0.5);
+    border: 1px solid rgba(200, 200, 200, 1);
+}
+
+/* RSI value styling */
+.rsi-overbought {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.rsi-oversold {
+    color: #28a745;
+    font-weight: bold;
+}
+
+/* Progress bars for confidence */
+.progress {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Footer styling */
+footer {
+    margin-top: 2rem;
+    padding: 1.5rem 0;
+}
+
+/* Tooltip custom styling */
+.tooltip-inner {
+    max-width: 300px;
+    text-align: left;
+}
+
+/* Animation for loading indicators */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-spinner {
+    animation: spin 1s linear infinite;
+}
+
+/* Make badges a bit larger in tables */
+.table .badge {
+    font-size: 0.9em;
+    padding: 0.4em 0.6em;
+}
+
+/* Improve mobile responsiveness */
+@media (max-width: 768px) {
+    .display-4 {
+        font-size: 2rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .table th, .table td {
+        padding: 0.5rem;
+    }
+}
