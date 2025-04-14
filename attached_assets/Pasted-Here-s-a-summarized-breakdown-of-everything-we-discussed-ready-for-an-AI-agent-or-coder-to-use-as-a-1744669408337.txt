@@ -1,0 +1,66 @@
+Here’s a summarized breakdown of everything we discussed, ready for an AI agent or coder to use as a blueprint for creating the system:
+
+⸻
+
+Objective:
+
+Build a reinforcement learning (RL) trading agent that uses a reversal pattern strategy on 5-minute stock data, enhanced with 15-minute Opening Range Breakout (ORB) context and dynamic RSI interpretation during market open.
+
+⸻
+
+Core Strategy Components:
+	1.	Reversal Pattern Detection:
+	•	Look for 3+ consecutive bullish or bearish candles.
+	•	Detect Doji and Hammer candlestick patterns.
+	2.	RSI Rules:
+	•	Standard Time (after 10:00 AM):
+	•	RSI > 70 → overbought → favor short.
+	•	RSI < 30 → oversold → favor long.
+	•	Opening Time (9:30 AM to 10:00 AM):
+	•	RSI > 70 → bullish momentum → favor long.
+	•	RSI < 30 → bearish momentum → favor short.
+	3.	15-Minute Opening Range Breakout (ORB):
+	•	Calculate high/low between 9:30–9:45 AM.
+	•	Use ORB context:
+	•	Above ORB High → bullish bias.
+	•	Below ORB Low → bearish bias.
+
+⸻
+
+Technical Setup:
+	1.	Data Source:
+	•	Use Alpaca API to fetch 5-minute historical data for multiple stocks (e.g., AAPL, MSFT, NVDA, AMD, TSLA).
+	•	Dates can span a year or more (start_date and end_date are adjustable).
+	•	Data includes: open, high, low, close, volume.
+	2.	Indicators:
+	•	Compute 14-period RSI using ta library.
+	•	Detect Doji and Hammer patterns manually.
+	3.	State Vector for RL Agent (10 inputs):
+	•	Current price
+	•	RSI
+	•	Is Doji (0 or 1)
+	•	Is Hammer (0 or 1)
+	•	Position (long, short, or flat)
+	•	Distance from ORB high
+	•	Distance from ORB low
+	•	Boolean: price above ORB high
+	•	Boolean: price below ORB low
+	•	Boolean: within market open time (9:30–10:00)
+	4.	RL Algorithm:
+	•	Use Proximal Policy Optimization (PPO) from stable-baselines3.
+	•	Train on a custom Gym environment that:
+	•	Randomly selects a stock each episode.
+	•	Resets daily and applies ORB rules.
+	•	Calculates rewards based on correct positioning, RSI bias, and price movement.
+	5.	Training Loop:
+	•	Save trained model.
+	•	Use tensorboard for performance tracking.
+	•	Optionally log equity curve and rewards per episode.
+	6.	Optional Enhancements:
+	•	Save fetched data to CSV for re-use.
+	•	Implement profit targets and stop-loss levels in the environment logic.
+	•	Track cumulative P&L or drawdowns over time.
+
+⸻
+
+Would you like me to generate a README or prompt file based on this summary that you can feed into another agent or system?
