@@ -230,6 +230,7 @@ def fetch_historical_data():
             pattern_type = 'unknown'
             description = ''
             
+            # Basic patterns
             if 'is_doji' in row and row['is_doji']:
                 pattern_type = 'doji'
                 description += 'Doji pattern detected. '
@@ -245,6 +246,47 @@ def fetch_historical_data():
             if 'potential_bearish_reversal' in row and row['potential_bearish_reversal']:
                 pattern_type = 'consecutive_bearish'
                 description += 'Potential bearish reversal after consecutive bullish candles. '
+                
+            # Advanced patterns - Engulfing
+            if 'bullish_engulfing' in row and row['bullish_engulfing']:
+                pattern_type = 'bullish_engulfing'
+                description += 'Bullish Engulfing pattern detected. Current candle completely engulfs previous bearish candle. Strong bullish signal. '
+            
+            if 'bearish_engulfing' in row and row['bearish_engulfing']:
+                pattern_type = 'bearish_engulfing'
+                description += 'Bearish Engulfing pattern detected. Current candle completely engulfs previous bullish candle. Strong bearish signal. '
+            
+            # Star patterns
+            if 'morning_star' in row and row['morning_star']:
+                pattern_type = 'morning_star'
+                description += 'Morning Star pattern detected. Potential bullish reversal after downtrend. '
+            
+            if 'evening_star' in row and row['evening_star']:
+                pattern_type = 'evening_star'
+                description += 'Evening Star pattern detected. Potential bearish reversal after uptrend. '
+            
+            # Shooting Star
+            if 'shooting_star' in row and row['shooting_star']:
+                pattern_type = 'shooting_star'
+                description += 'Shooting Star pattern detected. Long upper shadow with little to no lower shadow. Bearish reversal signal. '
+            
+            # Piercing patterns
+            if 'piercing_line' in row and row['piercing_line']:
+                pattern_type = 'piercing_line'
+                description += 'Piercing Line pattern detected. Bullish reversal signal where current candle closes more than halfway up previous bearish candle. '
+            
+            if 'dark_cloud_cover' in row and row['dark_cloud_cover']:
+                pattern_type = 'dark_cloud_cover'
+                description += 'Dark Cloud Cover pattern detected. Bearish reversal signal where current candle closes more than halfway down previous bullish candle. '
+            
+            # Three candle patterns
+            if 'three_white_soldiers' in row and row['three_white_soldiers']:
+                pattern_type = 'three_white_soldiers'
+                description += 'Three White Soldiers pattern detected. Three consecutive bullish candles with higher highs and higher lows. Strong bullish signal. '
+            
+            if 'three_black_crows' in row and row['three_black_crows']:
+                pattern_type = 'three_black_crows'
+                description += 'Three Black Crows pattern detected. Three consecutive bearish candles with lower lows and lower highs. Strong bearish signal. '
             
             # Add RSI information to description
             if 'rsi' in row:

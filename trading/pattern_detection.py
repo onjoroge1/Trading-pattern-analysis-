@@ -204,6 +204,214 @@ class PatternDetector:
         
         return result_df
     
+    def detect_engulfing(self, df):
+        """
+        Detect Engulfing patterns (Bullish and Bearish)
+        
+        Args:
+            df (pandas.DataFrame): OHLC dataframe
+            
+        Returns:
+            pandas.DataFrame: DataFrame with engulfing pattern columns
+        """
+        result_df = df.copy()
+        
+        # Calculate if current candle's body engulfs the previous candle's body
+        result_df['bullish_engulfing'] = False
+        result_df['bearish_engulfing'] = False
+        
+        for i in range(1, len(result_df)):
+            curr_open = result_df['open'].iloc[i]
+            curr_close = result_df['close'].iloc[i]
+            prev_open = result_df['open'].iloc[i-1]
+            prev_close = result_df['close'].iloc[i-1]
+            
+            # Bullish engulfing: Current candle is bullish and engulfs the previous bearish candle
+            result_df.loc[result_df.index[i], 'bullish_engulfing'] = (
+                (curr_close > curr_open) and  # Current candle is bullish
+                (prev_close < prev_open) and  # Previous candle is bearish
+                (curr_open < prev_close) and  # Current open below previous close
+                (curr_close > prev_open)      # Current close above previous open
+            )
+            
+            # Bearish engulfing: Current candle is bearish and engulfs the previous bullish candle
+            result_df.loc[result_df.index[i], 'bearish_engulfing'] = (
+                (curr_close < curr_open) and  # Current candle is bearish
+                (prev_close > prev_open) and  # Previous candle is bullish
+                (curr_open > prev_close) and  # Current open above previous close
+                (curr_close < prev_open)      # Current close below previous open
+            )
+        
+        return result_df
+    
+    def detect_stars(self, df):
+        """
+        Detect Morning Star and Evening Star patterns
+        
+        Args:
+            df (pandas.DataFrame): OHLC dataframe
+            
+        Returns:
+            pandas.DataFrame: DataFrame with star pattern columns
+        """
+        result_df = df.copy()
+        
+        result_df['morning_star'] = False
+        result_df['evening_star'] = False
+        
+        # We need at least 3 candles for star patterns
+        for i in range(2, len(result_df)):
+            # Get the three candles for the pattern
+            first_open = result_df['open'].iloc[i-2]
+            first_close = result_df['close'].iloc[i-2]
+            second_open = result_df['open'].iloc[i-1]
+            second_close = result_df['close'].iloc[i-1]
+            third_open = result_df['open'].iloc[i]
+            third_close = result_df['close'].iloc[i]
+            
+            # Calculate body sizes
+            first_body = abs(first_close - first_open)
+            second_body = abs(second_close - second_open)
+            third_body = abs(third_close - third_open)
+            
+            # Morning Star: First bearish, second small body (doji-like), third bullish
+            if (first_close < first_open and  # First candle bearish
+                second_body < 0.3 * first_body and  # Second candle small body
+                third_close > third_open and  # Third candle bullish
+                third_close > (first_open + first_close) / 2):  # Third closes above midpoint of first
+                
+                result_df.loc[result_df.index[i], 'morning_star'] = True
+            
+            # Evening Star: First bullish, second small body (doji-like), third bearish
+            if (first_close > first_open and  # First candle bullish
+                second_body < 0.3 * first_body and  # Second candle small body
+                third_close < third_open and  # Third candle bearish
+                third_close < (first_open + first_close) / 2):  # Third closes below midpoint of first
+                
+                result_df.loc[result_df.index[i], 'evening_star'] = True
+        
+        return result_df
+    
+    def detect_shooting_star(self, df):
+        """
+        Detect Shooting Star pattern
+        
+        Args:
+            df (pandas.DataFrame): OHLC dataframe
+            
+        Returns:
+            pandas.DataFrame: DataFrame with shooting star column
+        """
+        result_df = df.copy()
+        
+        # Calculate body and shadow sizes if not already calculated
+        if 'body_size' not in result_df.columns:
+            result_df['body_size'] = abs(result_df['close'] - result_df['open'])
+        
+        if 'upper_shadow' not in result_df.columns:
+            result_df['upper_shadow'] = result_df.apply(
+                lambda row: row['high'] - max(row['open'], row['close']), axis=1)
+            
+        if 'lower_shadow' not in result_df.columns:
+            result_df['lower_shadow'] = result_df.apply(
+                lambda row: min(row['open'], row['close']) - row['low'], axis=1)
+        
+        # Shooting Star: Small body, long upper shadow, little to no lower shadow
+        result_df['shooting_star'] = (
+            (result_df['upper_shadow'] > 2 * result_df['body_size']) &  # Long upper shadow
+            (result_df['lower_shadow'] < 0.1 * result_df['upper_shadow']) &  # Little to no lower shadow
+            (result_df['body_size'] > 0)  # Ensure there is a body
+        )
+        
+        return result_df
+    
+    def detect_piercing_patterns(self, df):
+        """
+        Detect Piercing Line and Dark Cloud Cover patterns
+        
+        Args:
+            df (pandas.DataFrame): OHLC dataframe
+            
+        Returns:
+            pandas.DataFrame: DataFrame with piercing pattern columns
+        """
+        result_df = df.copy()
+        
+        result_df['piercing_line'] = False
+        result_df['dark_cloud_cover'] = False
+        
+        for i in range(1, len(result_df)):
+            prev_open = result_df['open'].iloc[i-1]
+            prev_close = result_df['close'].iloc[i-1]
+            prev_body = abs(prev_close - prev_open)
+            
+            curr_open = result_df['open'].iloc[i]
+            curr_close = result_df['close'].iloc[i]
+            curr_body = abs(curr_close - curr_open)
+            
+            # Piercing Line: Previous bearish, current bullish open below previous low,
+            # close above the midpoint of previous candle
+            if (prev_close < prev_open and  # Previous bearish
+                curr_close > curr_open and  # Current bullish
+                curr_open < prev_close and  # Current opens below previous close
+                curr_close > (prev_open + prev_close) / 2 and  # Current closes above midpoint
+                curr_body > 0.6 * prev_body):  # Current body size significant
+                
+                result_df.loc[result_df.index[i], 'piercing_line'] = True
+            
+            # Dark Cloud Cover: Previous bullish, current bearish open above previous high,
+            # close below the midpoint of previous candle
+            if (prev_close > prev_open and  # Previous bullish
+                curr_close < curr_open and  # Current bearish
+                curr_open > prev_close and  # Current opens above previous close
+                curr_close < (prev_open + prev_close) / 2 and  # Current closes below midpoint
+                curr_body > 0.6 * prev_body):  # Current body size significant
+                
+                result_df.loc[result_df.index[i], 'dark_cloud_cover'] = True
+        
+        return result_df
+    
+    def detect_three_candle_patterns(self, df):
+        """
+        Detect Three White Soldiers and Three Black Crows patterns
+        
+        Args:
+            df (pandas.DataFrame): OHLC dataframe
+            
+        Returns:
+            pandas.DataFrame: DataFrame with three-candle pattern columns
+        """
+        result_df = df.copy()
+        
+        result_df['three_white_soldiers'] = False
+        result_df['three_black_crows'] = False
+        
+        # Need at least 3 candles for these patterns
+        for i in range(2, len(result_df)):
+            # Check Three White Soldiers
+            if (result_df['close'].iloc[i-2] > result_df['open'].iloc[i-2] and  # First bullish
+                result_df['close'].iloc[i-1] > result_df['open'].iloc[i-1] and  # Second bullish
+                result_df['close'].iloc[i] > result_df['open'].iloc[i] and      # Third bullish
+                result_df['close'].iloc[i] > result_df['close'].iloc[i-1] and   # Each close higher than previous
+                result_df['close'].iloc[i-1] > result_df['close'].iloc[i-2] and
+                result_df['open'].iloc[i] > result_df['open'].iloc[i-1] and     # Each open higher than previous
+                result_df['open'].iloc[i-1] > result_df['open'].iloc[i-2]):
+                
+                result_df.loc[result_df.index[i], 'three_white_soldiers'] = True
+                
+            # Check Three Black Crows
+            if (result_df['close'].iloc[i-2] < result_df['open'].iloc[i-2] and  # First bearish
+                result_df['close'].iloc[i-1] < result_df['open'].iloc[i-1] and  # Second bearish
+                result_df['close'].iloc[i] < result_df['open'].iloc[i] and      # Third bearish
+                result_df['close'].iloc[i] < result_df['close'].iloc[i-1] and   # Each close lower than previous
+                result_df['close'].iloc[i-1] < result_df['close'].iloc[i-2] and
+                result_df['open'].iloc[i] < result_df['open'].iloc[i-1] and     # Each open lower than previous
+                result_df['open'].iloc[i-1] < result_df['open'].iloc[i-2]):
+                
+                result_df.loc[result_df.index[i], 'three_black_crows'] = True
+        
+        return result_df
+    
     def detect_all_patterns(self, df, rsi_df=None):
         """
         Detect all reversal patterns in the OHLC data
@@ -218,11 +426,18 @@ class PatternDetector:
         # Make a copy of the dataframe
         result_df = df.copy()
         
-        # Apply all pattern detection methods
+        # Apply all base pattern detection methods
         result_df = self.detect_consecutive_candles(result_df)
         result_df = self.detect_doji(result_df)
         result_df = self.detect_hammer(result_df)
         result_df = self.calculate_orb(result_df)
+        
+        # Apply additional advanced pattern detection methods
+        result_df = self.detect_engulfing(result_df)
+        result_df = self.detect_stars(result_df)
+        result_df = self.detect_shooting_star(result_df)
+        result_df = self.detect_piercing_patterns(result_df)
+        result_df = self.detect_three_candle_patterns(result_df)
         
         # Add RSI information if provided
         if rsi_df is not None and 'rsi' in rsi_df.columns:
@@ -250,12 +465,23 @@ class PatternDetector:
                 (result_df['in_opening_hour'] & result_df['rsi_oversold'])
             )
         
-        # Flag to detect any reversal pattern
+        # Flag to detect any reversal pattern (now including advanced patterns)
         result_df['has_reversal_pattern'] = (
+            # Basic patterns
             result_df['is_doji'] | 
             result_df['is_hammer'] | 
             result_df['potential_bullish_reversal'] | 
-            result_df['potential_bearish_reversal']
+            result_df['potential_bearish_reversal'] |
+            # Advanced patterns
+            result_df.get('bullish_engulfing', False) | 
+            result_df.get('bearish_engulfing', False) |
+            result_df.get('morning_star', False) | 
+            result_df.get('evening_star', False) |
+            result_df.get('shooting_star', False) |
+            result_df.get('piercing_line', False) | 
+            result_df.get('dark_cloud_cover', False) |
+            result_df.get('three_white_soldiers', False) | 
+            result_df.get('three_black_crows', False)
         )
         
         return result_df

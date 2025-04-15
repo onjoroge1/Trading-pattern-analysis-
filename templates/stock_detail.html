@@ -161,6 +161,24 @@
                                                 <span class="badge bg-success">Bullish Reversal</span>
                                             {% elif pattern.pattern_type == 'consecutive_bearish' %}
                                                 <span class="badge bg-danger">Bearish Reversal</span>
+                                            {% elif pattern.pattern_type == 'bullish_engulfing' %}
+                                                <span class="badge bg-success">Bullish Engulfing</span>
+                                            {% elif pattern.pattern_type == 'bearish_engulfing' %}
+                                                <span class="badge bg-danger">Bearish Engulfing</span>
+                                            {% elif pattern.pattern_type == 'morning_star' %}
+                                                <span class="badge bg-success">Morning Star</span>
+                                            {% elif pattern.pattern_type == 'evening_star' %}
+                                                <span class="badge bg-danger">Evening Star</span>
+                                            {% elif pattern.pattern_type == 'shooting_star' %}
+                                                <span class="badge bg-danger">Shooting Star</span>
+                                            {% elif pattern.pattern_type == 'piercing_line' %}
+                                                <span class="badge bg-success">Piercing Line</span>
+                                            {% elif pattern.pattern_type == 'dark_cloud_cover' %}
+                                                <span class="badge bg-danger">Dark Cloud Cover</span>
+                                            {% elif pattern.pattern_type == 'three_white_soldiers' %}
+                                                <span class="badge bg-success">Three White Soldiers</span>
+                                            {% elif pattern.pattern_type == 'three_black_crows' %}
+                                                <span class="badge bg-danger">Three Black Crows</span>
                                             {% else %}
                                                 <span class="badge bg-secondary">{{ pattern.pattern_type }}</span>
                                             {% endif %}

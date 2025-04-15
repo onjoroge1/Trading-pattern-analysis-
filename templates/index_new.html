@@ -144,6 +144,24 @@
                                                             Bullish Reversal
                                                         {% elif pattern.pattern_type == 'consecutive_bearish' %}
                                                             Bearish Reversal
+                                                        {% elif pattern.pattern_type == 'bullish_engulfing' %}
+                                                            Bullish Engulfing
+                                                        {% elif pattern.pattern_type == 'bearish_engulfing' %}
+                                                            Bearish Engulfing
+                                                        {% elif pattern.pattern_type == 'morning_star' %}
+                                                            Morning Star
+                                                        {% elif pattern.pattern_type == 'evening_star' %}
+                                                            Evening Star
+                                                        {% elif pattern.pattern_type == 'shooting_star' %}
+                                                            Shooting Star
+                                                        {% elif pattern.pattern_type == 'piercing_line' %}
+                                                            Piercing Line
+                                                        {% elif pattern.pattern_type == 'dark_cloud_cover' %}
+                                                            Dark Cloud Cover
+                                                        {% elif pattern.pattern_type == 'three_white_soldiers' %}
+                                                            Three White Soldiers
+                                                        {% elif pattern.pattern_type == 'three_black_crows' %}
+                                                            Three Black Crows
                                                         {% else %}
                                                             {{ pattern.pattern_type|title }}
                                                         {% endif %}
