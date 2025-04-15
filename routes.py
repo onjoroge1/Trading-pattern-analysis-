@@ -327,9 +327,10 @@ def train_model():
         # Get market API client for this request
         market_api = get_market_api()
         
-        # Default to 5min timeframe for training
-        timespan = 'minute'
-        multiplier = 5
+        # Get selected timeframe or default to daily data
+        timeframe = request.form.get('timeframe', 'day,1')
+        timespan, multiplier = timeframe.split(',')
+        multiplier = int(multiplier)
         
         stock_data_dict = {}
         for symbol in selected_stocks:
@@ -374,6 +375,13 @@ def train_model():
         agent.save_model(model_path)
         
         # Save training info to database
+        # Convert timeframe format to a user-friendly string
+        timeframe_display = f"{multiplier}{timespan[0]}"  # e.g., "5m", "1d", "1w"
+        if timespan == "minute":
+            timeframe_display = f"{multiplier}min"
+        elif timespan == "hour":
+            timeframe_display = f"{multiplier}hour"
+            
         training_info = RLModelTraining(
             model_name=model_name,
             start_date=start_date,
@@ -381,7 +389,8 @@ def train_model():
             stocks_used=','.join(selected_stocks),
             total_episodes=episodes,
             total_timesteps=timesteps,
-            model_path=model_path
+            model_path=model_path,
+            timeframe=timeframe_display
         )
         
         db.session.add(training_info)

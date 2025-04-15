@@ -63,21 +63,29 @@ class PatternDetector:
         
         # Calculate consecutive bullish candles
         bullish_count = 0
+        consecutive_bullish = []
+        
         for i in range(len(result_df)):
             if result_df['bullish'].iloc[i]:
                 bullish_count += 1
             else:
                 bullish_count = 0
-            result_df['consecutive_bullish'].iloc[i] = bullish_count
+            consecutive_bullish.append(bullish_count)
+        
+        result_df.loc[:, 'consecutive_bullish'] = consecutive_bullish
         
         # Calculate consecutive bearish candles
         bearish_count = 0
+        consecutive_bearish = []
+        
         for i in range(len(result_df)):
             if result_df['bearish'].iloc[i]:
                 bearish_count += 1
             else:
                 bearish_count = 0
-            result_df['consecutive_bearish'].iloc[i] = bearish_count
+            consecutive_bearish.append(bearish_count)
+        
+        result_df.loc[:, 'consecutive_bearish'] = consecutive_bearish
         
         # Identify potential reversal patterns based on consecutive candles
         result_df['potential_bullish_reversal'] = (

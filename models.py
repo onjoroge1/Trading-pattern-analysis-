@@ -82,6 +82,7 @@ class RLModelTraining(db.Model):
     total_timesteps = db.Column(db.Integer, nullable=False)
     final_reward = db.Column(db.Float)
     model_path = db.Column(db.String(255))
+    timeframe = db.Column(db.String(20), default='5min')  # Store the timeframe used for training
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def __repr__(self):
