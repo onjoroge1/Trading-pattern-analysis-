@@ -9,12 +9,14 @@ dependencies = [
     "flask>=3.1.0",
     "flask-sqlalchemy>=3.1.1",
     "gunicorn>=23.0.0",
-    "gym>=0.26.2",
+    "gym==0.26.2",
     "matplotlib>=3.10.1",
     "numpy>=2.2.4",
     "pandas>=2.2.3",
     "psycopg2-binary>=2.9.10",
     "sqlalchemy>=2.0.40",
+    "stable-baselines3==1.7.0",
+    "torch==2.0.1",
     "werkzeug>=3.1.3",
 ]
 
