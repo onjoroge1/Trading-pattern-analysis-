@@ -1,0 +1,284 @@
+{% extends "layout.html" %}
+
+{% block title %}Data Fetching Demo{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-4">
+            <i class="fas fa-database text-primary me-2"></i>
+            Data Fetching Demo
+        </h1>
+        <p class="lead">
+            Test different timeframes for historical data fetching.
+        </p>
+    </div>
+</div>
+
+<!-- Fetch Form -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-download me-2"></i>
+                    Fetch Data
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="fetch-form">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="symbol" class="form-label">Symbol</label>
+                                <input type="text" class="form-control" id="symbol" value="AAPL" required>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="days" class="form-label">Days</label>
+                                <input type="number" class="form-control" id="days" min="1" max="365" value="7">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="timeframe" class="form-label">Timeframe</label>
+                                <select class="form-select" id="timeframe">
+                                    <option value="5min" selected>5 Minutes</option>
+                                    <option value="15min">15 Minutes</option>
+                                    <option value="30min">30 Minutes</option>
+                                    <option value="1hour">1 Hour</option>
+                                    <option value="4hour">4 Hours</option>
+                                    <option value="1day">Daily</option>
+                                    <option value="1week">Weekly</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <div class="mb-3 w-100">
+                                <button type="button" id="fetch-button" class="btn btn-primary w-100">
+                                    <i class="fas fa-download me-2"></i>
+                                    Fetch Data
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Results -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Results
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="loading" class="text-center" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Fetching data...</p>
+                </div>
+                
+                <div id="results-container">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Enter a symbol and click "Fetch Data" to see the results.
+                    </div>
+                </div>
+                
+                <div id="chart-container" style="height: 400px; display: none;">
+                    <canvas id="priceChart"></canvas>
+                </div>
+                
+                <div id="data-preview" class="mt-4">
+                    <h5>Data Preview</h5>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-sm" id="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Open</th>
+                                    <th>High</th>
+                                    <th>Low</th>
+                                    <th>Close</th>
+                                    <th>Volume</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fetchButton = document.getElementById('fetch-button');
+        
+        fetchButton.addEventListener('click', function() {
+            const symbol = document.getElementById('symbol').value.trim().toUpperCase();
+            const days = document.getElementById('days').value;
+            const timeframe = document.getElementById('timeframe').value;
+            
+            if (!symbol) {
+                alert('Please enter a symbol');
+                return;
+            }
+            
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results-container').style.display = 'none';
+            document.getElementById('chart-container').style.display = 'none';
+            
+            // Fetch data
+            fetch(`/api/stock_data/${symbol}?days=${days}&timeframe=${timeframe}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Hide loading
+                    document.getElementById('loading').style.display = 'none';
+                    
+                    if (data.error) {
+                        document.getElementById('results-container').innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                Error: ${data.error}
+                            </div>
+                        `;
+                        document.getElementById('results-container').style.display = 'block';
+                        return;
+                    }
+                    
+                    // Show chart
+                    document.getElementById('chart-container').style.display = 'block';
+                    createChart(data);
+                    
+                    // Show data preview
+                    populateDataTable(data);
+                    
+                    // Show summary
+                    const count = data.timestamps.length;
+                    const firstDate = new Date(data.timestamps[0]).toLocaleString();
+                    const lastDate = new Date(data.timestamps[count-1]).toLocaleString();
+                    
+                    document.getElementById('results-container').innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            Successfully fetched ${count} data points for ${symbol} (${timeframe}) from ${firstDate} to ${lastDate}.
+                        </div>
+                    `;
+                    document.getElementById('results-container').style.display = 'block';
+                })
+                .catch(error => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('results-container').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            Error fetching data: ${error.message}
+                        </div>
+                    `;
+                    document.getElementById('results-container').style.display = 'block';
+                });
+        });
+    });
+    
+    function createChart(data) {
+        const ctx = document.getElementById('priceChart').getContext('2d');
+        
+        // Destroy existing chart if any
+        if (window.priceChart) {
+            window.priceChart.destroy();
+        }
+        
+        // Create datasets
+        const datasets = [{
+            label: 'Price',
+            data: data.prices.close,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderWidth: 1,
+            fill: false
+        }];
+        
+        // Add RSI if available
+        if (data.indicators && data.indicators.rsi) {
+            datasets.push({
+                label: 'RSI',
+                data: data.indicators.rsi,
+                borderColor: 'rgba(153, 102, 255, 1)',
+                backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                borderWidth: 1,
+                yAxisID: 'rsi'
+            });
+        }
+        
+        // Create chart
+        window.priceChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.timestamps.map(ts => new Date(ts).toLocaleString()),
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    },
+                    rsi: {
+                        type: 'linear',
+                        display: data.indicators && data.indicators.rsi ? true : false,
+                        position: 'right',
+                        min: 0,
+                        max: 100,
+                        grid: {
+                            drawOnChartArea: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'RSI'
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    function populateDataTable(data) {
+        const tableBody = document.querySelector('#data-table tbody');
+        tableBody.innerHTML = '';
+        
+        // Show only first 10 rows
+        const maxRows = Math.min(10, data.timestamps.length);
+        
+        for (let i = 0; i < maxRows; i++) {
+            const row = document.createElement('tr');
+            
+            row.innerHTML = `
+                <td>${new Date(data.timestamps[i]).toLocaleString()}</td>
+                <td>${data.prices.open[i].toFixed(2)}</td>
+                <td>${data.prices.high[i].toFixed(2)}</td>
+                <td>${data.prices.low[i].toFixed(2)}</td>
+                <td>${data.prices.close[i].toFixed(2)}</td>
+                <td>${data.volume[i].toLocaleString()}</td>
+            `;
+            
+            tableBody.appendChild(row);
+        }
+    }
+</script>
+{% endblock %}

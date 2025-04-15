@@ -112,7 +112,7 @@
             <div class="card-body">
                 <form action="{{ url_for('generate_signals') }}" method="post">
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="symbol" class="form-label">Select Stock</label>
                                 <select class="form-select" id="symbol" name="symbol" required>
@@ -131,7 +131,7 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="model_id" class="form-label">Select Model</label>
                                 <select class="form-select" id="model_id" name="model_id" required>
@@ -143,6 +143,20 @@
                                             </option>
                                         {% endfor %}
                                     {% endif %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="timeframe" class="form-label">Timeframe</label>
+                                <select class="form-select" id="timeframe" name="timeframe">
+                                    <option value="5min" selected>5 Minutes</option>
+                                    <option value="15min">15 Minutes</option>
+                                    <option value="30min">30 Minutes</option>
+                                    <option value="1hour">1 Hour</option>
+                                    <option value="4hour">4 Hours</option>
+                                    <option value="1day">Daily</option>
+                                    <option value="1week">Weekly</option>
                                 </select>
                             </div>
                         </div>

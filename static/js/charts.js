@@ -2,12 +2,16 @@
  * Charts.js - Handles chart creation and management for the trading system
  */
 
+// Global variable to store the current timeframe
+let currentTimeframe = '5min';
+
 /**
  * Load a stock chart with price and indicator data
  * @param {string} symbol - Stock symbol
  * @param {number} days - Number of days of data to fetch
+ * @param {string} timeframe - Optional timeframe (e.g., '5min', '15min', '1hour')
  */
-function loadStockChart(symbol, days) {
+function loadStockChart(symbol, days, timeframe) {
     // Show loading indicator
     const chartCanvas = document.getElementById('priceChart');
     const ctx = chartCanvas.getContext('2d');
@@ -17,6 +21,9 @@ function loadStockChart(symbol, days) {
         window.priceChart.destroy();
     }
     
+    // Use the provided timeframe or current global timeframe
+    const tf = timeframe || currentTimeframe;
+    
     // Draw loading text
     ctx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
     ctx.font = '16px Arial';
@@ -24,8 +31,8 @@ function loadStockChart(symbol, days) {
     ctx.textAlign = 'center';
     ctx.fillText('Loading chart data...', chartCanvas.width / 2, chartCanvas.height / 2);
     
-    // Fetch data from API
-    fetch(`/api/stock_data/${symbol}?days=${days}`)
+    // Fetch data from API with timeframe
+    fetch(`/api/stock_data/${symbol}?days=${days}&timeframe=${tf}`)
         .then(response => response.json())
         .then(data => {
             if (data.error) {
@@ -50,6 +57,37 @@ function loadStockChart(symbol, days) {
             console.error('Error fetching stock data:', error);
             showChartError(ctx, chartCanvas, 'Failed to load chart data. Please try again later.');
         });
+}
+
+/**
+ * Update chart resolution/timeframe
+ * @param {string} timeframe - Timeframe to update to (e.g., '5min', '15min', '1hour')
+ */
+function updateChartResolution(timeframe) {
+    // Update the global timeframe
+    currentTimeframe = timeframe;
+    
+    // Get the current symbol from the page
+    const symbol = document.querySelector('h1').textContent.trim().split(' ')[0];
+    
+    // Highlight active timeframe button
+    document.querySelectorAll('.btn-group button[onclick^="updateChartResolution"]').forEach(btn => {
+        btn.classList.remove('active', 'btn-secondary');
+        btn.classList.add('btn-outline-secondary');
+    });
+    
+    const activeBtn = document.querySelector(`.btn-group button[onclick="updateChartResolution('${timeframe}')"]`);
+    if (activeBtn) {
+        activeBtn.classList.remove('btn-outline-secondary');
+        activeBtn.classList.add('active', 'btn-secondary');
+    }
+    
+    // Reload the chart with current days but new timeframe
+    // Use a default of 30 days if we can't determine current days
+    const daysMatch = window.location.search.match(/days=(\d+)/);
+    const days = daysMatch ? parseInt(daysMatch[1]) : 30;
+    
+    loadStockChart(symbol, days, timeframe);
 }
 
 /**

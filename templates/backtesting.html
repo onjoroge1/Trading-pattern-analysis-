@@ -28,7 +28,7 @@
             <div class="card-body">
                 <form action="{{ url_for('run_backtest') }}" method="post">
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="mb-3">
                                 <label for="symbol" class="form-label">Select Stock</label>
                                 <select class="form-select" id="symbol" name="symbol" required>
@@ -47,7 +47,7 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="mb-3">
                                 <label for="model_id" class="form-label">Select Model</label>
                                 <select class="form-select" id="model_id" name="model_id" required>
@@ -62,11 +62,26 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="mb-3">
                                 <label for="days" class="form-label">Test Period (Days)</label>
                                 <input type="number" class="form-control" id="days" name="days" min="7" max="90" value="30">
                                 <div class="form-text">Historical data to test against</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="timeframe" class="form-label">Timeframe</label>
+                                <select class="form-select" id="timeframe" name="timeframe">
+                                    <option value="5min" selected>5 Minutes</option>
+                                    <option value="15min">15 Minutes</option>
+                                    <option value="30min">30 Minutes</option>
+                                    <option value="1hour">1 Hour</option>
+                                    <option value="4hour">4 Hours</option>
+                                    <option value="1day">Daily</option>
+                                    <option value="1week">Weekly</option>
+                                </select>
+                                <div class="form-text">Candle timeframe for analysis</div>
                             </div>
                         </div>
                     </div>

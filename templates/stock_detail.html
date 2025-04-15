@@ -382,9 +382,9 @@
         loadStockChart('{{ stock.symbol }}', 30);
     });
     
-    // Function to update chart timeframe
+    // Function to update chart timeframe (days)
     function updateChartTimeframe(days) {
-        loadStockChart('{{ stock.symbol }}', days);
+        loadStockChart('{{ stock.symbol }}', days, currentTimeframe);
     }
 </script>
 {% endblock %}

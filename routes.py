@@ -892,3 +892,8 @@ def api_positions():
     except Exception as e:
         logger.error(f"Error in api_positions: {e}")
         return jsonify({'error': str(e)})
+
+@app.route('/fetch_data_demo')
+def fetch_data_demo():
+    """Demo page for testing data fetching with different timeframes"""
+    return render_template('fetch_data_demo.html')
