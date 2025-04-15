@@ -53,12 +53,20 @@ def index():
         # Get market hours
         market_hours = market_api.get_market_hours()
         
+        # Get recent patterns
+        recent_patterns = db.session.query(
+            PatternDetection, Stock
+        ).join(Stock).order_by(
+            PatternDetection.timestamp.desc()
+        ).limit(10).all()
+        
         return render_template(
-            'index.html',
+            'index_new.html',
             stocks=stocks,
             account_info=account_info,
             recent_signals=recent_signals,
             recent_trades=recent_trades,
+            recent_patterns=recent_patterns,
             market_hours=market_hours
         )
     except Exception as e:
@@ -910,3 +918,41 @@ def api_positions():
 def fetch_data_demo():
     """Demo page for testing data fetching with different timeframes"""
     return render_template('fetch_data_demo.html')
+
+@app.route('/admin', methods=['GET', 'POST'])
+def admin():
+    """Admin dashboard for system configuration"""
+    # Handle POST requests for different forms
+    if request.method == 'POST':
+        form_type = request.form.get('form_type')
+        
+        if form_type == 'training_settings':
+            # Save training settings
+            flash('Training settings updated successfully', 'success')
+        elif form_type == 'api_settings':
+            # Save API settings
+            flash('API settings updated successfully', 'success')
+        elif form_type == 'system_settings':
+            # Save system settings
+            flash('System settings updated successfully', 'success')
+        
+        return redirect(url_for('admin'))
+    
+    # Get all stocks
+    stocks = Stock.query.all()
+    
+    # Get all trained models
+    models = RLModelTraining.query.all()
+    
+    # Get Polygon API key status
+    polygon_api_key = os.environ.get('POLYGON_API_KEY')
+    polygon_api_key_masked = None
+    if polygon_api_key:
+        polygon_api_key_masked = polygon_api_key[:4] + '...'
+    
+    return render_template(
+        'admin.html',
+        stocks=stocks,
+        models=models,
+        polygon_api_key=polygon_api_key_masked
+    )

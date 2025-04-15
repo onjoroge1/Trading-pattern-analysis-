@@ -1,0 +1,399 @@
+{% extends "layout.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-4">
+            <i class="fas fa-cogs text-primary me-2"></i>
+            Admin Dashboard
+        </h1>
+        <p class="lead">
+            Configure and manage the trading system.
+        </p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Left Sidebar -->
+    <div class="col-md-3 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Admin Menu</h5>
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="#stocks-section" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-chart-line me-2"></i> Manage Stocks</span>
+                    <span class="badge bg-primary rounded-pill">{{ stocks|length }}</span>
+                </a>
+                <a href="#models-section" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-brain me-2"></i> Models</span>
+                    <span class="badge bg-primary rounded-pill">{{ models|length if models else 0 }}</span>
+                </a>
+                <a href="#training-section" class="list-group-item list-group-item-action">
+                    <i class="fas fa-graduation-cap me-2"></i> Training Settings
+                </a>
+                <a href="#api-settings" class="list-group-item list-group-item-action">
+                    <i class="fas fa-key me-2"></i> API Settings
+                </a>
+                <a href="#system-settings" class="list-group-item list-group-item-action">
+                    <i class="fas fa-sliders-h me-2"></i> System Settings
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content Area -->
+    <div class="col-md-9">
+        <!-- Stocks Management -->
+        <div id="stocks-section" class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Manage Stocks</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('add_stock') }}" method="post" class="mb-4">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-md-4">
+                            <label for="symbol" class="form-label">Stock Symbol</label>
+                            <input type="text" class="form-control" id="symbol" name="symbol" placeholder="e.g., AAPL" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">Company Name</label>
+                            <input type="text" class="form-control" id="name" name="name" placeholder="e.g., Apple Inc.">
+                        </div>
+                        <div class="col-md-2 mt-4">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-plus me-2"></i> Add
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Name</th>
+                                <th>Added On</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if stocks %}
+                                {% for stock in stocks %}
+                                    <tr>
+                                        <td>
+                                            <a href="{{ url_for('stock_detail', symbol=stock.symbol) }}">
+                                                {{ stock.symbol }}
+                                            </a>
+                                        </td>
+                                        <td>{{ stock.name }}</td>
+                                        <td>{{ stock.created_at.strftime('%Y-%m-%d') }}</td>
+                                        <td>
+                                            {% if stock.active %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{{ url_for('stock_detail', symbol=stock.symbol) }}" class="btn btn-outline-primary" title="View details">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="#" class="btn btn-outline-success" title="Fetch data" onclick="fetchDataForStock('{{ stock.symbol }}')">
+                                                    <i class="fas fa-sync-alt"></i>
+                                                </a>
+                                                <a href="#" class="btn btn-outline-danger" title="Remove stock" onclick="removeStock('{{ stock.id }}')">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No stocks added yet. Add a stock above.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Model Management -->
+        <div id="models-section" class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Manage Models</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Model Name</th>
+                                <th>Training Period</th>
+                                <th>Stocks</th>
+                                <th>Performance</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if models %}
+                                {% for model in models %}
+                                    <tr>
+                                        <td>{{ model.model_name }}</td>
+                                        <td>{{ model.start_date.strftime('%Y-%m-%d') }} to {{ model.end_date.strftime('%Y-%m-%d') }}</td>
+                                        <td>{{ model.stocks_used }}</td>
+                                        <td>{{ model.final_reward }}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{{ url_for('backtesting') }}?model_id={{ model.id }}" class="btn btn-outline-primary" title="Backtest">
+                                                    <i class="fas fa-chart-line"></i>
+                                                </a>
+                                                <a href="{{ url_for('live_trading') }}?model_id={{ model.id }}" class="btn btn-outline-success" title="Use for trading">
+                                                    <i class="fas fa-robot"></i>
+                                                </a>
+                                                <a href="#" class="btn btn-outline-danger" title="Delete model" onclick="deleteModel('{{ model.id }}')">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No models trained yet. <a href="{{ url_for('training') }}" class="btn btn-sm btn-primary">Train a model</a></td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer text-center">
+                <a href="{{ url_for('training') }}" class="btn btn-primary">
+                    <i class="fas fa-graduation-cap me-2"></i> Train New Model
+                </a>
+            </div>
+        </div>
+        
+        <!-- Training Settings -->
+        <div id="training-section" class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Training Settings</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('admin') }}" method="post" class="mb-3">
+                    <input type="hidden" name="form_type" value="training_settings">
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="default_episodes" class="form-label">Default Episodes</label>
+                            <input type="number" class="form-control" id="default_episodes" name="default_episodes" value="1000" min="100">
+                            <div class="form-text">Number of training episodes for RL models</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="default_learning_rate" class="form-label">Default Learning Rate</label>
+                            <input type="number" class="form-control" id="default_learning_rate" name="default_learning_rate" value="0.001" step="0.0001" min="0.0001">
+                            <div class="form-text">Learning rate for training process</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="default_training_days" class="form-label">Default Training Period (Days)</label>
+                            <input type="number" class="form-control" id="default_training_days" name="default_training_days" value="90" min="7">
+                            <div class="form-text">Amount of historical data to use for training</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="default_validation_days" class="form-label">Default Validation Period (Days)</label>
+                            <input type="number" class="form-control" id="default_validation_days" name="default_validation_days" value="30" min="7">
+                            <div class="form-text">Amount of historical data to use for validation</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="use_gpu" name="use_gpu" checked>
+                                <label class="form-check-label" for="use_gpu">Use GPU for training (if available)</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="save_checkpoints" name="save_checkpoints" checked>
+                                <label class="form-check-label" for="save_checkpoints">Save training checkpoints</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i> Save Training Settings
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- API Settings -->
+        <div id="api-settings" class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">API Settings</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('admin') }}" method="post">
+                    <input type="hidden" name="form_type" value="api_settings">
+                    
+                    <div class="mb-3">
+                        <label for="polygon_api_key" class="form-label">Polygon.io API Key</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="polygon_api_key" name="polygon_api_key" value="{{ polygon_api_key if polygon_api_key else '********' }}" disabled>
+                            <button class="btn btn-outline-secondary" type="button" id="toggle-api-key">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">API key for Polygon.io market data (stored as environment variable)</div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        API keys are stored securely as environment variables. Contact the administrator to update these values.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="api_request_limit" class="form-label">API Request Limit (daily)</label>
+                        <input type="number" class="form-control" id="api_request_limit" name="api_request_limit" value="5000" min="100">
+                        <div class="form-text">Maximum daily API requests to avoid hitting rate limits</div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i> Save API Settings
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- System Settings -->
+        <div id="system-settings" class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">System Settings</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('admin') }}" method="post">
+                    <input type="hidden" name="form_type" value="system_settings">
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="log_level" class="form-label">Log Level</label>
+                            <select class="form-select" id="log_level" name="log_level">
+                                <option value="DEBUG">Debug</option>
+                                <option value="INFO" selected>Info</option>
+                                <option value="WARNING">Warning</option>
+                                <option value="ERROR">Error</option>
+                            </select>
+                            <div class="form-text">Logging detail level for the application</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="default_timeframe" class="form-label">Default Timeframe</label>
+                            <select class="form-select" id="default_timeframe" name="default_timeframe">
+                                <option value="5min" selected>5 Minutes</option>
+                                <option value="15min">15 Minutes</option>
+                                <option value="30min">30 Minutes</option>
+                                <option value="1hour">1 Hour</option>
+                                <option value="4hour">4 Hours</option>
+                                <option value="1day">Daily</option>
+                                <option value="1week">Weekly</option>
+                            </select>
+                            <div class="form-text">Default timeframe for charts and analysis</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="pattern_detection_sensitivity" class="form-label">Pattern Detection Sensitivity</label>
+                            <input type="range" class="form-range" id="pattern_detection_sensitivity" name="pattern_detection_sensitivity" min="1" max="10" value="5">
+                            <div class="row">
+                                <div class="col-4 text-start">Low</div>
+                                <div class="col-4 text-center">Medium</div>
+                                <div class="col-4 text-end">High</div>
+                            </div>
+                            <div class="form-text">Adjusts sensitivity for pattern detection algorithms</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="model_update_frequency" class="form-label">Model Update Frequency</label>
+                            <select class="form-select" id="model_update_frequency" name="model_update_frequency">
+                                <option value="daily">Daily</option>
+                                <option value="weekly" selected>Weekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="manual">Manual only</option>
+                            </select>
+                            <div class="form-text">How often RL models should be retrained</div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i> Save System Settings
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Toggle API key visibility
+    document.getElementById('toggle-api-key').addEventListener('click', function() {
+        const keyInput = document.getElementById('polygon_api_key');
+        const eyeIcon = this.querySelector('i');
+        
+        if (keyInput.type === 'password') {
+            keyInput.type = 'text';
+            eyeIcon.classList.remove('fa-eye');
+            eyeIcon.classList.add('fa-eye-slash');
+        } else {
+            keyInput.type = 'password';
+            eyeIcon.classList.remove('fa-eye-slash');
+            eyeIcon.classList.add('fa-eye');
+        }
+    });
+    
+    // Function to fetch data for a stock
+    function fetchDataForStock(symbol) {
+        if (confirm(`Fetch latest data for ${symbol}?`)) {
+            fetch('/fetch_historical_data?symbol=' + symbol)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(`Successfully fetched data for ${symbol}`);
+                    } else {
+                        alert(`Error: ${data.error}`);
+                    }
+                })
+                .catch(error => alert('Error fetching data: ' + error));
+        }
+    }
+    
+    // Function to remove a stock
+    function removeStock(stockId) {
+        if (confirm('Are you sure you want to remove this stock? This will also delete all related patterns and signals.')) {
+            // Here you would implement the AJAX call to remove the stock
+            // For now, we'll just reload the page
+            alert('This functionality would remove the stock (not implemented)');
+        }
+    }
+    
+    // Function to delete a model
+    function deleteModel(modelId) {
+        if (confirm('Are you sure you want to delete this model? This action cannot be undone.')) {
+            // Here you would implement the AJAX call to delete the model
+            // For now, we'll just reload the page
+            alert('This functionality would delete the model (not implemented)');
+        }
+    }
+</script>
+{% endblock %}
