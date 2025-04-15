@@ -34,6 +34,13 @@ app.config["ALPACA_API_SECRET"] = os.environ.get("ALPACA_API_SECRET", "")
 app.config["ALPACA_BASE_URL"] = os.environ.get("ALPACA_BASE_URL", "https://paper-api.alpaca.markets")
 app.config["ALPACA_DATA_URL"] = os.environ.get("ALPACA_DATA_URL", "https://data.alpaca.markets")
 
+# Polygon API configuration
+app.config["POLYGON_API_KEY"] = os.environ.get("POLYGON_API_KEY")
+if app.config["POLYGON_API_KEY"]:
+    logger.info("Polygon API key found in environment")
+else:
+    logger.warning("Polygon API key not found in environment variables")
+
 # Initialize the app with the extension
 db.init_app(app)
 

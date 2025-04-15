@@ -22,6 +22,8 @@ class PolygonAPI:
         
         if not self.api_key:
             logger.warning("Polygon API key not provided")
+        else:
+            logger.info(f"Polygon API initialized with key: {self.api_key[:5]}...")
     
     def initialize_from_app(self, app=None):
         """
