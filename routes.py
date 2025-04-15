@@ -7,21 +7,21 @@ import json
 from flask import render_template, jsonify, request, Response, flash, redirect, url_for, g
 from app import app, db
 from models import Stock, PatternDetection, TradingSignal, TradeExecution, RLModelTraining
-from trading.alpaca_api import AlpacaAPI
+from trading.polygon_api import PolygonAPI
 from trading.pattern_detection import PatternDetector
 from trading.indicators import TechnicalIndicators
 from trading.rl_agent import RLAgent
 
 logger = logging.getLogger(__name__)
 
-# Function to get Alpaca API client
-def get_alpaca_api():
-    """Get or create AlpacaAPI instance for the current request"""
-    if not hasattr(g, 'alpaca_api'):
+# Function to get Polygon API client
+def get_market_api():
+    """Get or create PolygonAPI instance for the current request"""
+    if not hasattr(g, 'market_api'):
         # Create new instance and initialize from app
-        g.alpaca_api = AlpacaAPI()
-        g.alpaca_api.initialize_from_app(app)
-    return g.alpaca_api
+        g.market_api = PolygonAPI()
+        g.market_api.initialize_from_app(app)
+    return g.market_api
 
 @app.route('/')
 def index():
@@ -30,11 +30,11 @@ def index():
         # Get list of stocks
         stocks = Stock.query.filter_by(active=True).all()
         
-        # Get Alpaca API client for this request
-        alpaca_api = get_alpaca_api()
+        # Get Market API client for this request
+        market_api = get_market_api()
         
         # Get account info (if available)
-        account_info = alpaca_api.get_account_info()
+        account_info = market_api.get_account_info()
         
         # Get recent signals
         recent_signals = db.session.query(
@@ -51,7 +51,7 @@ def index():
         ).limit(10).all()
         
         # Get market hours
-        market_hours = alpaca_api.get_market_hours()
+        market_hours = market_api.get_market_hours()
         
         return render_template(
             'index.html',
@@ -123,11 +123,11 @@ def stock_detail(symbol):
             TradeExecution.timestamp.desc()
         ).limit(50).all()
         
-        # Get Alpaca API client for this request
-        alpaca_api = get_alpaca_api()
+        # Get Market API client for this request
+        market_api = get_market_api()
         
         # Get current market data if available
-        current_data = alpaca_api.get_current_market_data([symbol])
+        current_data = market_api.get_current_market_data([symbol])
         
         return render_template(
             'stock_detail.html',
@@ -165,9 +165,9 @@ def fetch_historical_data():
         start_date = end_date - timedelta(days=days)
         
         # Get Alpaca API client for this request
-        alpaca_api = get_alpaca_api()
+        market_api = get_market_api()
         
-        data = alpaca_api.get_historical_data(symbol, '5Min', start_date, end_date)
+        data = market_api.get_historical_data(symbol, '5Min', start_date, end_date)
         
         if data.empty:
             flash(f'No data available for {symbol}', 'warning')
@@ -297,11 +297,11 @@ def train_model():
         start_date = end_date - timedelta(days=days)
         
         # Get Alpaca API client for this request
-        alpaca_api = get_alpaca_api()
+        market_api = get_market_api()
         
         stock_data_dict = {}
         for symbol in selected_stocks:
-            data = alpaca_api.get_historical_data(symbol, '5Min', start_date, end_date)
+            data = market_api.get_historical_data(symbol, '5Min', start_date, end_date)
             
             if data.empty:
                 continue
@@ -404,9 +404,9 @@ def run_backtest():
         start_date = end_date - timedelta(days=days)
         
         # Get Alpaca API client for this request
-        alpaca_api = get_alpaca_api()
+        market_api = get_market_api()
         
-        data = alpaca_api.get_historical_data(symbol, '5Min', start_date, end_date)
+        data = market_api.get_historical_data(symbol, '5Min', start_date, end_date)
         
         if data.empty:
             flash(f'No data available for {symbol}', 'warning')
@@ -464,7 +464,7 @@ def live_trading():
     ).all()
     
     # Get Alpaca API client for this request
-    alpaca_api = get_alpaca_api()
+    market_api = get_market_api()
     
     # Get account info
     account_info = alpaca_api.get_account_info()
@@ -513,9 +513,9 @@ def generate_signals():
         start_date = end_date - timedelta(days=5)  # Get recent 5 days
         
         # Get Alpaca API client for this request
-        alpaca_api = get_alpaca_api()
+        market_api = get_market_api()
         
-        data = alpaca_api.get_historical_data(symbol, '5Min', start_date, end_date)
+        data = market_api.get_historical_data(symbol, '5Min', start_date, end_date)
         
         if data.empty:
             flash(f'No data available for {symbol}', 'warning')
@@ -663,7 +663,7 @@ def execute_trade():
             return redirect(url_for('live_trading'))
         
         # Get Alpaca API client for this request
-        alpaca_api = get_alpaca_api()
+        market_api = get_market_api()
         
         # Submit order to Alpaca
         order_result = alpaca_api.submit_order(
@@ -710,9 +710,9 @@ def api_stock_data(symbol):
         start_date = end_date - timedelta(days=days)
         
         # Get Alpaca API client for this request
-        alpaca_api = get_alpaca_api()
+        market_api = get_market_api()
         
-        data = alpaca_api.get_historical_data(symbol, '5Min', start_date, end_date)
+        data = market_api.get_historical_data(symbol, '5Min', start_date, end_date)
         
         if data.empty:
             return jsonify({'error': 'No data available'})
@@ -800,7 +800,7 @@ def api_account_info():
     """API endpoint to get account information"""
     try:
         # Get Alpaca API client for this request
-        alpaca_api = get_alpaca_api()
+        market_api = get_market_api()
         
         account_info = alpaca_api.get_account_info()
         if not account_info:
@@ -816,7 +816,7 @@ def api_positions():
     """API endpoint to get current positions"""
     try:
         # Get Alpaca API client for this request
-        alpaca_api = get_alpaca_api()
+        market_api = get_market_api()
         
         positions = alpaca_api.get_positions()
         return jsonify(positions)
