@@ -15,7 +15,7 @@ dependencies = [
     "pandas>=2.2.3",
     "psycopg2-binary>=2.9.10",
     "sqlalchemy>=2.0.40",
-    "stable-baselines3==1.7.0",
+    "stable-baselines3==2.2.1",
     "torch==2.0.1",
     "werkzeug>=3.1.3",
 ]
