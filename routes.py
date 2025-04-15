@@ -535,6 +535,7 @@ def generate_signals():
         # Get parameters
         symbol = request.form.get('symbol')
         model_id = request.form.get('model_id')
+        timeframe = request.form.get('timeframe', '5min')
         
         if not symbol or not model_id:
             flash('Stock symbol and model are required', 'danger')
@@ -559,11 +560,23 @@ def generate_signals():
         # Get market API client for this request
         market_api = get_market_api()
         
-        # Default to 5min timeframe for signals
-        timespan = 'minute'
-        multiplier = 5
+        # Map timeframe to Polygon parameters
+        timeframe_map = {
+            '5min': {'timespan': 'minute', 'multiplier': 5},
+            '15min': {'timespan': 'minute', 'multiplier': 15},
+            '30min': {'timespan': 'minute', 'multiplier': 30},
+            '1hour': {'timespan': 'hour', 'multiplier': 1},
+            '4hour': {'timespan': 'hour', 'multiplier': 4},
+            '1day': {'timespan': 'day', 'multiplier': 1},
+            '1week': {'timespan': 'week', 'multiplier': 1}
+        }
         
-        logger.info(f"Fetching signal data for {symbol} with timeframe 5min")
+        # Get timespan and multiplier for the selected timeframe
+        selected_timeframe = timeframe_map.get(timeframe, {'timespan': 'minute', 'multiplier': 5})
+        timespan = selected_timeframe['timespan']
+        multiplier = selected_timeframe['multiplier']
+        
+        logger.info(f"Fetching signal data for {symbol} with {timeframe} ({timespan}/{multiplier})")
         data = market_api.get_historical_data(symbol, timespan=timespan, multiplier=multiplier, start_date=start_date, end_date=end_date)
         
         if data.empty:
