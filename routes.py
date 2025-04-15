@@ -72,7 +72,7 @@ def index():
     except Exception as e:
         logger.error(f"Error in index route: {e}")
         flash(f"An error occurred: {str(e)}", 'danger')
-        return render_template('index.html', error=str(e))
+        return render_template('index_new.html', error=str(e))
 
 @app.route('/stocks')
 def stock_list():
