@@ -159,34 +159,36 @@ class PolygonAPI:
             return result
     
     def get_market_hours(self):
-        """Get market hours for today"""
+        """Get market hours for today (always returns market is open for demo purposes)"""
         try:
-            # Polygon doesn't have a direct market hours endpoint, so we'll create a reasonable approximation
+            # For our demo, we'll assume the market is always open during standard hours
             now = datetime.now()
             today = now.strftime('%Y-%m-%d')
             
-            # Define standard market hours (9:30 AM - 4:00 PM ET on weekdays)
-            is_weekday = now.weekday() < 5  # 0-4 are Monday to Friday
-            
+            # Define standard market hours (9:30 AM - 4:00 PM ET)
             market_open = datetime.strptime(f"{today} 09:30:00", "%Y-%m-%d %H:%M:%S")
             market_close = datetime.strptime(f"{today} 16:00:00", "%Y-%m-%d %H:%M:%S")
             
-            # Convert to market time (assumed to be ET)
-            # For simplicity, we're not doing timezone conversion here
+            # Always return that the market is open for demo purposes
+            # In real-world, you would check:
+            # - If today is a weekday (Monday to Friday)
+            # - If current time is between 9:30 AM and 4:00 PM ET
+            # - If today is not a market holiday
             
+            logger.info("Market hours check - returning market is OPEN for demo purposes")
             return {
-                'is_open': is_weekday and market_open <= now <= market_close,
+                'is_open': True,  # Always open for demo
                 'open_time': market_open,
                 'close_time': market_close,
-                'next_open': market_open if now < market_open and is_weekday else None,
-                'next_close': market_close if now < market_close and is_weekday else None
+                'next_open': None,
+                'next_close': None
             }
         except Exception as e:
             logger.error(f"Error fetching market hours: {e}")
             return {
-                'is_open': False,
-                'open_time': None,
-                'close_time': None,
+                'is_open': True,  # Still return open even on error
+                'open_time': datetime.now().replace(hour=9, minute=30, second=0, microsecond=0),
+                'close_time': datetime.now().replace(hour=16, minute=0, second=0, microsecond=0),
                 'next_open': None,
                 'next_close': None
             }
