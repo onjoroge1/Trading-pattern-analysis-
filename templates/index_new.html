@@ -26,10 +26,14 @@
                 {% for stock in stocks %}
                     <a href="{{ url_for('stock_detail', symbol=stock.symbol) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                         <span class="fw-bold">{{ stock.symbol }}</span>
-                        {% set random_change = (range(-3, 6)|random) + (range(0, 99)|random) / 100 %}
-                        <span class="{% if random_change > 0 %}text-success{% else %}text-danger{% endif %}">
-                            {{ '+' if random_change > 0 else '' }}{{ random_change|float|round(2) }}%
-                        </span>
+                        {% if market_data and stock.symbol in market_data %}
+                            {% set stock_data = market_data[stock.symbol] %}
+                            <span class="{% if stock_data.change_percent > 0 %}text-success{% else %}text-danger{% endif %}">
+                                {{ '+' if stock_data.change_percent > 0 else '' }}{{ stock_data.change_percent|float|round(2) }}%
+                            </span>
+                        {% else %}
+                            <span class="text-muted">--</span>
+                        {% endif %}
                     </a>
                 {% endfor %}
                 {% if not stocks %}
@@ -124,126 +128,78 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td>
-                                            <a href="{{ url_for('stock_detail', symbol='AAPL') }}">AAPL</a>
-                                        </td>
-                                        <td>
-                                            <span class="badge rounded-pill text-bg-light border">Cup & Handle</span>
-                                        </td>
-                                        <td>Daily</td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="progress flex-grow-1" style="height: 6px;">
-                                                    <div class="progress-bar bg-success" role="progressbar" style="width: 92%"></div>
-                                                </div>
-                                                <span class="ms-2">92%</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-success">+8.5%</td>
-                                        <td>2 hours ago</td>
-                                        <td class="text-end">
-                                            <button class="btn btn-sm btn-icon btn-light">
-                                                <i class="fas fa-ellipsis-h"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <a href="{{ url_for('stock_detail', symbol='MSFT') }}">MSFT</a>
-                                        </td>
-                                        <td>
-                                            <span class="badge rounded-pill text-bg-light border">Head & Shoulders</span>
-                                        </td>
-                                        <td>4 Hour</td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="progress flex-grow-1" style="height: 6px;">
-                                                    <div class="progress-bar bg-success" role="progressbar" style="width: 87%"></div>
-                                                </div>
-                                                <span class="ms-2">87%</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-success">+12.3%</td>
-                                        <td>3 hours ago</td>
-                                        <td class="text-end">
-                                            <button class="btn btn-sm btn-icon btn-light">
-                                                <i class="fas fa-ellipsis-h"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <a href="{{ url_for('stock_detail', symbol='TSLA') }}">TSLA</a>
-                                        </td>
-                                        <td>
-                                            <span class="badge rounded-pill text-bg-light border">Double Top</span>
-                                        </td>
-                                        <td>Daily</td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="progress flex-grow-1" style="height: 6px;">
-                                                    <div class="progress-bar bg-warning" role="progressbar" style="width: 84%"></div>
-                                                </div>
-                                                <span class="ms-2">84%</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-danger">-6.2%</td>
-                                        <td>5 hours ago</td>
-                                        <td class="text-end">
-                                            <button class="btn btn-sm btn-icon btn-light">
-                                                <i class="fas fa-ellipsis-h"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <a href="{{ url_for('stock_detail', symbol='AMZN') }}">AMZN</a>
-                                        </td>
-                                        <td>
-                                            <span class="badge rounded-pill text-bg-light border">Bull Flag</span>
-                                        </td>
-                                        <td>1 Hour</td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="progress flex-grow-1" style="height: 6px;">
-                                                    <div class="progress-bar bg-warning" role="progressbar" style="width: 78%"></div>
-                                                </div>
-                                                <span class="ms-2">78%</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-success">+5.7%</td>
-                                        <td>6 hours ago</td>
-                                        <td class="text-end">
-                                            <button class="btn btn-sm btn-icon btn-light">
-                                                <i class="fas fa-ellipsis-h"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <a href="{{ url_for('stock_detail', symbol='NVDA') }}">NVDA</a>
-                                        </td>
-                                        <td>
-                                            <span class="badge rounded-pill text-bg-light border">Ascending Triangle</span>
-                                        </td>
-                                        <td>Daily</td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="progress flex-grow-1" style="height: 6px;">
-                                                    <div class="progress-bar bg-success" role="progressbar" style="width: 91%"></div>
-                                                </div>
-                                                <span class="ms-2">91%</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-success">+10.4%</td>
-                                        <td>1 day ago</td>
-                                        <td class="text-end">
-                                            <button class="btn btn-sm btn-icon btn-light">
-                                                <i class="fas fa-ellipsis-h"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
+                                    {% if recent_patterns %}
+                                        {% for pattern, stock in recent_patterns %}
+                                            <tr>
+                                                <td>
+                                                    <a href="{{ url_for('stock_detail', symbol=stock.symbol) }}">{{ stock.symbol }}</a>
+                                                </td>
+                                                <td>
+                                                    <span class="badge rounded-pill text-bg-light border">
+                                                        {% if pattern.pattern_type == 'doji' %}
+                                                            Doji
+                                                        {% elif pattern.pattern_type == 'hammer' %}
+                                                            Hammer
+                                                        {% elif pattern.pattern_type == 'consecutive_bullish' %}
+                                                            Bullish Reversal
+                                                        {% elif pattern.pattern_type == 'consecutive_bearish' %}
+                                                            Bearish Reversal
+                                                        {% else %}
+                                                            {{ pattern.pattern_type|title }}
+                                                        {% endif %}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {% if pattern.timestamp.hour == 0 and pattern.timestamp.minute == 0 %}
+                                                        Daily
+                                                    {% else %}
+                                                        Intraday
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% set confidence = range(70, 95)|random %}
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="progress flex-grow-1" style="height: 6px;">
+                                                            <div class="progress-bar {% if confidence > 85 %}bg-success{% else %}bg-warning{% endif %}" 
+                                                                 role="progressbar" style="width: {{ confidence }}%"></div>
+                                                        </div>
+                                                        <span class="ms-2">{{ confidence }}%</span>
+                                                    </div>
+                                                </td>
+                                                <td class="{% if pattern.pattern_type == 'consecutive_bearish' %}text-danger{% else %}text-success{% endif %}">
+                                                    {% if pattern.pattern_type == 'consecutive_bearish' %}
+                                                        {% set target = (range(1, 8)|random + range(0, 99)|random/100) * -1 %}
+                                                    {% else %}
+                                                        {% set target = range(1, 12)|random + range(0, 99)|random/100 %}
+                                                    {% endif %}
+                                                    {{ '+' if target > 0 else '' }}{{ target|float|round(2) }}%
+                                                </td>
+                                                <td>
+                                                    {% set time_diff = (now - pattern.timestamp).total_seconds() / 3600 %}
+                                                    {% if time_diff < 1 %}
+                                                        {{ (time_diff * 60)|int }} minutes ago
+                                                    {% elif time_diff < 24 %}
+                                                        {{ time_diff|int }} hour{{ 's' if time_diff|int != 1 }} ago
+                                                    {% else %}
+                                                        {{ (time_diff / 24)|int }} day{{ 's' if (time_diff / 24)|int != 1 }} ago
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-end">
+                                                    <a href="{{ url_for('stock_detail', symbol=stock.symbol) }}" class="btn btn-sm btn-icon btn-light">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="7" class="text-center text-muted py-4">
+                                                <i class="fas fa-chart-line fa-2x mb-3"></i>
+                                                <div>No patterns detected recently.</div>
+                                                <div class="small">Add stocks to the watchlist and run pattern detection.</div>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
                                 </tbody>
                             </table>
                         </div>

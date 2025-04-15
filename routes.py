@@ -36,6 +36,10 @@ def index():
         # Get account info (if available)
         account_info = market_api.get_account_info()
         
+        # Get current market data for stocks in the watchlist
+        stock_symbols = [stock.symbol for stock in stocks]
+        market_data = market_api.get_current_market_data(stock_symbols) if stock_symbols else {}
+        
         # Get recent signals
         recent_signals = db.session.query(
             TradingSignal, Stock
@@ -67,7 +71,9 @@ def index():
             recent_signals=recent_signals,
             recent_trades=recent_trades,
             recent_patterns=recent_patterns,
-            market_hours=market_hours
+            market_hours=market_hours,
+            market_data=market_data,  # Pass market data for watchlist display
+            now=datetime.now()  # Pass current datetime for template calculations
         )
     except Exception as e:
         logger.error(f"Error in index route: {e}")
