@@ -129,6 +129,22 @@ function createPriceChart(canvas, data, patternData) {
     const annotations = {};
     if (patternData && patternData.length > 0) {
         patternData.forEach((pattern, index) => {
+            // Determine if the pattern is bullish or bearish for positioning
+            const isBullish = isBullishPattern(pattern.pattern_type);
+            const isBearish = isBearishPattern(pattern.pattern_type);
+            
+            // Determine symbol and position based on pattern type
+            let symbol = '●'; // Default circle
+            let position = 'top';
+            
+            if (isBullish) {
+                symbol = '▲'; // Triangle up for bullish
+                position = 'bottom'; // Show below candle
+            } else if (isBearish) {
+                symbol = '▼'; // Triangle down for bearish
+                position = 'top'; // Show above candle
+            }
+            
             annotations[`pattern_${index}`] = {
                 type: 'point',
                 xValue: pattern.timestamp,
@@ -136,13 +152,17 @@ function createPriceChart(canvas, data, patternData) {
                 backgroundColor: getPatternColor(pattern.pattern_type),
                 borderColor: 'white',
                 borderWidth: 1,
-                radius: 6,
+                radius: 7,
+                pointStyle: symbol,
                 label: {
                     enabled: true,
                     content: getPatternLabel(pattern.pattern_type),
-                    position: 'top',
+                    position: position,
                     backgroundColor: 'rgba(0,0,0,0.7)',
-                    color: 'white'
+                    color: 'white',
+                    font: {
+                        size: 11
+                    }
                 }
             };
         });
@@ -258,8 +278,17 @@ function createPriceChart(canvas, data, patternData) {
                             const timestampIndex = data.timestamps.findIndex(ts => ts === pattern.timestamp);
                             
                             if (timestampIndex !== -1) {
-                                // Position the annotation just above the high price
-                                annotation.yValue = data.prices.high[timestampIndex] * 1.01;
+                                // Position based on whether pattern is bullish or bearish
+                                if (isBullishPattern(pattern.pattern_type)) {
+                                    // For bullish patterns, position below the low price
+                                    annotation.yValue = data.prices.low[timestampIndex] * 0.99;
+                                } else if (isBearishPattern(pattern.pattern_type)) {
+                                    // For bearish patterns, position above the high price
+                                    annotation.yValue = data.prices.high[timestampIndex] * 1.01;
+                                } else {
+                                    // For neutral patterns like doji, position at the closing price
+                                    annotation.yValue = data.prices.close[timestampIndex];
+                                }
                             }
                         }
                     });
@@ -276,6 +305,7 @@ function createPriceChart(canvas, data, patternData) {
  */
 function getPatternColor(patternType) {
     switch (patternType) {
+        // Basic patterns
         case 'doji':
             return '#17a2b8'; // Info color
         case 'hammer':
@@ -284,8 +314,37 @@ function getPatternColor(patternType) {
             return '#28a745'; // Success color
         case 'consecutive_bearish':
             return '#dc3545'; // Danger color
+            
+        // Engulfing patterns
+        case 'bullish_engulfing':
+            return '#28a745'; // Success color (green)
+        case 'bearish_engulfing':
+            return '#dc3545'; // Danger color (red)
+            
+        // Star patterns
+        case 'morning_star':
+            return '#28a745'; // Success color (green)
+        case 'evening_star':
+            return '#dc3545'; // Danger color (red)
+            
+        // Shooting star pattern (bearish)
+        case 'shooting_star':
+            return '#dc3545'; // Danger color (red)
+            
+        // Piercing patterns
+        case 'piercing_line':
+            return '#28a745'; // Success color (green)
+        case 'dark_cloud_cover':
+            return '#dc3545'; // Danger color (red)
+            
+        // Three candle patterns
+        case 'three_white_soldiers':
+            return '#28a745'; // Success color (green)
+        case 'three_black_crows':
+            return '#dc3545'; // Danger color (red)
+            
         default:
-            return '#6c757d'; // Secondary color
+            return '#6c757d'; // Secondary color (gray)
     }
 }
 
@@ -296,6 +355,7 @@ function getPatternColor(patternType) {
  */
 function getPatternLabel(patternType) {
     switch (patternType) {
+        // Basic patterns
         case 'doji':
             return 'Doji';
         case 'hammer':
@@ -304,9 +364,77 @@ function getPatternLabel(patternType) {
             return 'Bullish';
         case 'consecutive_bearish':
             return 'Bearish';
+            
+        // Engulfing patterns
+        case 'bullish_engulfing':
+            return 'Bull Engulf';
+        case 'bearish_engulfing':
+            return 'Bear Engulf';
+            
+        // Star patterns
+        case 'morning_star':
+            return 'Morning ★';
+        case 'evening_star':
+            return 'Evening ★';
+            
+        // Shooting star pattern
+        case 'shooting_star':
+            return 'Shooting ★';
+            
+        // Piercing patterns
+        case 'piercing_line':
+            return 'Piercing';
+        case 'dark_cloud_cover':
+            return 'Dark Cloud';
+            
+        // Three candle patterns
+        case 'three_white_soldiers':
+            return '3 Soldiers';
+        case 'three_black_crows':
+            return '3 Crows';
+            
         default:
-            return patternType;
+            // Convert snake_case to Title Case
+            return patternType.split('_')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
     }
+}
+
+/**
+ * Check if a pattern type is bullish
+ * @param {string} patternType - The type of pattern 
+ * @returns {boolean} True if the pattern is bullish
+ */
+function isBullishPattern(patternType) {
+    const bullishPatterns = [
+        'consecutive_bullish', 
+        'bullish_engulfing', 
+        'morning_star', 
+        'piercing_line', 
+        'three_white_soldiers',
+        'hammer'  // Hammer is typically bullish
+    ];
+    
+    return bullishPatterns.includes(patternType);
+}
+
+/**
+ * Check if a pattern type is bearish
+ * @param {string} patternType - The type of pattern
+ * @returns {boolean} True if the pattern is bearish
+ */
+function isBearishPattern(patternType) {
+    const bearishPatterns = [
+        'consecutive_bearish', 
+        'bearish_engulfing', 
+        'evening_star', 
+        'shooting_star', 
+        'dark_cloud_cover', 
+        'three_black_crows'
+    ];
+    
+    return bearishPatterns.includes(patternType);
 }
 
 /**

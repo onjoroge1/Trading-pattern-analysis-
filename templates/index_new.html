@@ -271,16 +271,27 @@
         new Chart(patternDistCtx, {
             type: 'pie',
             data: {
-                labels: ['Double Bottom', 'Cup & Handle', 'Reversal', 'Head & Shoulders', 'Flags', 'Other'],
+                labels: [
+                    'Doji', 
+                    'Hammer', 
+                    'Engulfing Patterns', 
+                    'Star Patterns', 
+                    'Shooting Star', 
+                    'Three Candle Patterns', 
+                    'Piercing/Cloud', 
+                    'Consecutive Candles'
+                ],
                 datasets: [{
-                    data: [25, 20, 18, 15, 12, 10],
+                    data: [18, 15, 14, 12, 10, 9, 11, 11],
                     backgroundColor: [
-                        'rgba(54, 162, 235, 0.7)',
-                        'rgba(75, 192, 192, 0.7)',
-                        'rgba(255, 99, 132, 0.7)',
-                        'rgba(255, 159, 64, 0.7)',
-                        'rgba(153, 102, 255, 0.7)',
-                        'rgba(201, 203, 207, 0.7)'
+                        'rgba(23, 162, 184, 0.7)', // Info blue for Doji
+                        'rgba(255, 193, 7, 0.7)',  // Warning yellow for Hammer
+                        'rgba(40, 167, 69, 0.7)',  // Success green for Engulfing
+                        'rgba(255, 99, 132, 0.7)',  // Pink for Star Patterns
+                        'rgba(220, 53, 69, 0.7)',  // Danger red for Shooting Star
+                        'rgba(153, 102, 255, 0.7)', // Purple for Three Candle
+                        'rgba(255, 159, 64, 0.7)',  // Orange for Piercing/Cloud
+                        'rgba(108, 117, 125, 0.7)'  // Gray for Consecutive
                     ],
                     borderWidth: 1
                 }]
@@ -305,12 +316,29 @@
         new Chart(patternAccCtx, {
             type: 'bar',
             data: {
-                labels: ['Double Bottom', 'Cup & Handle', 'Reversal', 'Head & Shoulders', 'Flags'],
+                labels: [
+                    'Bullish Engulfing', 
+                    'Bearish Engulfing', 
+                    'Morning Star', 
+                    'Evening Star',
+                    'Hammer',
+                    'Shooting Star',
+                    'Doji',
+                    'Three Soldiers'
+                ],
                 datasets: [{
                     label: 'Accuracy (%)',
-                    data: [88, 92, 75, 83, 79],
-                    backgroundColor: 'rgba(75, 192, 192, 0.7)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
+                    data: [84, 81, 91, 87, 77, 82, 69, 88],
+                    backgroundColor: [
+                        'rgba(40, 167, 69, 0.7)',   // Success green
+                        'rgba(220, 53, 69, 0.7)',   // Danger red
+                        'rgba(40, 167, 69, 0.7)',   // Success green
+                        'rgba(220, 53, 69, 0.7)',   // Danger red
+                        'rgba(255, 193, 7, 0.7)',   // Warning yellow
+                        'rgba(220, 53, 69, 0.7)',   // Danger red
+                        'rgba(23, 162, 184, 0.7)',  // Info blue
+                        'rgba(40, 167, 69, 0.7)'    // Success green
+                    ],
                     borderWidth: 1
                 }]
             },
@@ -404,10 +432,19 @@
         new Chart(successCtx, {
             type: 'radar',
             data: {
-                labels: ['Cup & Handle', 'Head & Shoulders', 'Double Top/Bottom', 'Flag Patterns', 'Triangles', 'Reversal Patterns'],
+                labels: [
+                    'Engulfing Patterns', 
+                    'Doji Patterns', 
+                    'Hammer Patterns', 
+                    'Star Patterns',
+                    'Shooting Star', 
+                    'Piercing/Cloud',
+                    'Three Candle Patterns', 
+                    'Consecutive Candles'
+                ],
                 datasets: [{
                     label: 'Success Rate (%)',
-                    data: [92, 85, 78, 82, 88, 75],
+                    data: [89, 76, 83, 91, 78, 85, 93, 82],
                     backgroundColor: 'rgba(153, 102, 255, 0.2)',
                     borderColor: 'rgba(153, 102, 255, 1)',
                     borderWidth: 2,
