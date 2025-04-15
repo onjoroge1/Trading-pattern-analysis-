@@ -167,7 +167,7 @@ def fetch_historical_data():
         # Get Alpaca API client for this request
         market_api = get_market_api()
         
-        data = market_api.get_historical_data(symbol, '5Min', start_date, end_date)
+        data = market_api.get_historical_data(symbol, timespan='minute', multiplier=5, start_date=start_date, end_date=end_date)
         
         if data.empty:
             flash(f'No data available for {symbol}', 'warning')
@@ -301,7 +301,7 @@ def train_model():
         
         stock_data_dict = {}
         for symbol in selected_stocks:
-            data = market_api.get_historical_data(symbol, '5Min', start_date, end_date)
+            data = market_api.get_historical_data(symbol, timespan='minute', multiplier=5, start_date=start_date, end_date=end_date)
             
             if data.empty:
                 continue
@@ -406,7 +406,7 @@ def run_backtest():
         # Get Alpaca API client for this request
         market_api = get_market_api()
         
-        data = market_api.get_historical_data(symbol, '5Min', start_date, end_date)
+        data = market_api.get_historical_data(symbol, timespan='minute', multiplier=5, start_date=start_date, end_date=end_date)
         
         if data.empty:
             flash(f'No data available for {symbol}', 'warning')
@@ -515,7 +515,7 @@ def generate_signals():
         # Get Alpaca API client for this request
         market_api = get_market_api()
         
-        data = market_api.get_historical_data(symbol, '5Min', start_date, end_date)
+        data = market_api.get_historical_data(symbol, timespan='minute', multiplier=5, start_date=start_date, end_date=end_date)
         
         if data.empty:
             flash(f'No data available for {symbol}', 'warning')
@@ -712,7 +712,7 @@ def api_stock_data(symbol):
         # Get Alpaca API client for this request
         market_api = get_market_api()
         
-        data = market_api.get_historical_data(symbol, '5Min', start_date, end_date)
+        data = market_api.get_historical_data(symbol, timespan='minute', multiplier=5, start_date=start_date, end_date=end_date)
         
         if data.empty:
             return jsonify({'error': 'No data available'})
