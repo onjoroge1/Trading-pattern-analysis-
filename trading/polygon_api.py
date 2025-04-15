@@ -62,6 +62,9 @@ class PolygonAPI:
             start_str = start_date.strftime('%Y-%m-%d')
             end_str = end_date.strftime('%Y-%m-%d')
             
+            # Make sure symbol is uppercase
+            symbol = symbol.upper()
+            
             # Construct API URL
             url = f"{self.base_url}/v2/aggs/ticker/{symbol}/range/{multiplier}/{timespan}/{start_str}/{end_str}"
             
@@ -71,15 +74,26 @@ class PolygonAPI:
                 'sort': 'asc',
                 'limit': 50000  # Maximum allowed
             }
+            
+            logger.info(f"Fetching data for {symbol} from {start_str} to {end_str} with timespan {multiplier}/{timespan}")
             response = requests.get(url, params=params)
+            
+            # Print full response for debugging
+            logger.info(f"Polygon API response status: {response.status_code}")
             
             # Check for errors
             response.raise_for_status()
             data = response.json()
             
+            # Print response status for debugging
+            logger.info(f"Polygon API response status: {data.get('status')}")
+            
             if 'results' not in data or not data['results']:
                 logger.warning(f"No data returned for {symbol} from {start_str} to {end_str}")
                 return pd.DataFrame()
+            
+            # Log success
+            logger.info(f"Successfully fetched {len(data['results'])} bars for {symbol}")
             
             # Convert to DataFrame
             df = pd.DataFrame(data['results'])
@@ -101,7 +115,12 @@ class PolygonAPI:
             return df
             
         except Exception as e:
-            logger.error(f"Error fetching historical data: {e}")
+            logger.error(f"Error fetching historical data for {symbol}: {e}")
+            if 'response' in locals():
+                try:
+                    logger.error(f"Response content: {response.text}")
+                except:
+                    pass
             return pd.DataFrame()
     
     def get_current_market_data(self, symbols):

@@ -148,6 +148,21 @@ def fetch_historical_data():
     try:
         symbol = request.form.get('symbol')
         days = int(request.form.get('days', 30))
+        timeframe = request.form.get('timeframe', '5min')
+        
+        # Map timeframe to Polygon parameters
+        timeframe_map = {
+            '5min': {'timespan': 'minute', 'multiplier': 5},
+            '15min': {'timespan': 'minute', 'multiplier': 15},
+            '30min': {'timespan': 'minute', 'multiplier': 30},
+            '1hour': {'timespan': 'hour', 'multiplier': 1},
+            '4hour': {'timespan': 'hour', 'multiplier': 4},
+            '1day': {'timespan': 'day', 'multiplier': 1},
+            '1week': {'timespan': 'week', 'multiplier': 1}
+        }
+        
+        # Get timespan and multiplier for the selected timeframe
+        selected_timeframe = timeframe_map.get(timeframe, {'timespan': 'minute', 'multiplier': 5})
         
         if not symbol:
             flash('Stock symbol is required', 'danger')
@@ -164,10 +179,15 @@ def fetch_historical_data():
         end_date = datetime.now()
         start_date = end_date - timedelta(days=days)
         
-        # Get Alpaca API client for this request
+        # Get market API client for this request
         market_api = get_market_api()
         
-        data = market_api.get_historical_data(symbol, timespan='minute', multiplier=5, start_date=start_date, end_date=end_date)
+        # Use the selected timeframe parameters
+        timespan = selected_timeframe['timespan']
+        multiplier = selected_timeframe['multiplier']
+        
+        logger.info(f"Fetching {symbol} data with timeframe: {timespan}/{multiplier}, from {start_date} to {end_date}")
+        data = market_api.get_historical_data(symbol, timespan=timespan, multiplier=multiplier, start_date=start_date, end_date=end_date)
         
         if data.empty:
             flash(f'No data available for {symbol}', 'warning')
