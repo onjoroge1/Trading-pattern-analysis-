@@ -128,7 +128,8 @@ class RLAgent:
         """
         # Generate a random action (0: do nothing, 1: buy/long, 2: sell/short)
         action = random.randint(0, 2)
-        return action, None
+        # Return action as numpy array to match stable-baselines3 API
+        return np.array([action]), None
     
     def backtest(self, stock_data, symbol=None):
         """
