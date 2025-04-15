@@ -467,13 +467,13 @@ def live_trading():
     market_api = get_market_api()
     
     # Get account info
-    account_info = alpaca_api.get_account_info()
+    account_info = market_api.get_account_info()
     
     # Get current positions
-    positions = alpaca_api.get_positions()
+    positions = market_api.get_positions()
     
     # Get market hours
-    market_hours = alpaca_api.get_market_hours()
+    market_hours = market_api.get_market_hours()
     
     return render_template(
         'live_trading.html',
@@ -666,7 +666,7 @@ def execute_trade():
         market_api = get_market_api()
         
         # Submit order to Alpaca
-        order_result = alpaca_api.submit_order(
+        order_result = market_api.submit_order(
             symbol=signal.stock.symbol,
             qty=quantity,
             side=action
@@ -802,7 +802,7 @@ def api_account_info():
         # Get Alpaca API client for this request
         market_api = get_market_api()
         
-        account_info = alpaca_api.get_account_info()
+        account_info = market_api.get_account_info()
         if not account_info:
             return jsonify({'error': 'Failed to fetch account info'})
         
@@ -818,7 +818,7 @@ def api_positions():
         # Get Alpaca API client for this request
         market_api = get_market_api()
         
-        positions = alpaca_api.get_positions()
+        positions = market_api.get_positions()
         return jsonify(positions)
     except Exception as e:
         logger.error(f"Error in api_positions: {e}")
