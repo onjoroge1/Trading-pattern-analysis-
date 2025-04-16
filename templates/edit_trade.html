@@ -1,0 +1,133 @@
+{% extends "layout.html" %}
+
+{% block title %}Edit Trade Entry{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-4">
+            <i class="fas fa-edit text-primary me-2"></i>
+            Edit Trade
+        </h1>
+        <p class="lead">
+            Update your trade journal entry.
+        </p>
+    </div>
+</div>
+
+<!-- Edit Trade Form -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-edit me-2"></i>
+                    Edit Trade
+                </h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('edit_trade_journal', trade_id=trade.id) }}" method="post">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="symbol" class="form-label">Stock Symbol</label>
+                                <input type="text" class="form-control" id="symbol" value="{{ trade.stock.symbol }}" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="position_type" class="form-label">Position Type</label>
+                                <input type="text" class="form-control" id="position_type" value="{{ trade.position_type }}" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="entry_date" class="form-label">Entry Date</label>
+                                <input type="datetime-local" class="form-control" id="entry_date" value="{{ trade.entry_date.isoformat(timespec='minutes') }}" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="exit_date" class="form-label">Exit Date</label>
+                                <input type="datetime-local" class="form-control" id="exit_date" name="exit_date" value="{{ trade.exit_date.isoformat(timespec='minutes') if trade.exit_date else '' }}">
+                                <div class="form-text">Leave blank for open positions</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="entry_price" class="form-label">Entry Price ($)</label>
+                                <input type="number" class="form-control" id="entry_price" value="{{ trade.entry_price }}" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="exit_price" class="form-label">Exit Price ($)</label>
+                                <input type="number" class="form-control" id="exit_price" name="exit_price" step="0.01" min="0.01" value="{{ trade.exit_price or '' }}">
+                                <div class="form-text">Leave blank for open positions</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="position_size" class="form-label">Position Size (Shares)</label>
+                                <input type="number" class="form-control" id="position_size" value="{{ trade.position_size }}" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="rsi_at_entry" class="form-label">RSI at Entry</label>
+                                <input type="number" class="form-control" id="rsi_at_entry" name="rsi_at_entry" step="0.01" min="0" max="100" value="{{ trade.rsi_at_entry or '' }}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="strategy" class="form-label">Strategy Used</label>
+                                <select class="form-select" id="strategy" name="strategy">
+                                    <option value="">-- Select Strategy --</option>
+                                    <option value="rsi_oversold" {% if trade.strategy == 'rsi_oversold' %}selected{% endif %}>RSI Oversold</option>
+                                    <option value="rsi_overbought" {% if trade.strategy == 'rsi_overbought' %}selected{% endif %}>RSI Overbought</option>
+                                    <option value="doji_reversal" {% if trade.strategy == 'doji_reversal' %}selected{% endif %}>Doji Reversal</option>
+                                    <option value="hammer_reversal" {% if trade.strategy == 'hammer_reversal' %}selected{% endif %}>Hammer Reversal</option>
+                                    <option value="engulfing_pattern" {% if trade.strategy == 'engulfing_pattern' %}selected{% endif %}>Engulfing Pattern</option>
+                                    <option value="orb_breakout" {% if trade.strategy == 'orb_breakout' %}selected{% endif %}>ORB Breakout</option>
+                                    <option value="morning_star" {% if trade.strategy == 'morning_star' %}selected{% endif %}>Morning Star</option>
+                                    <option value="evening_star" {% if trade.strategy == 'evening_star' %}selected{% endif %}>Evening Star</option>
+                                    <option value="three_candle" {% if trade.strategy == 'three_candle' %}selected{% endif %}>Three Candle Pattern</option>
+                                    <option value="other" {% if trade.strategy == 'other' %}selected{% endif %}>Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="success_reason" class="form-label">Why the Trade Worked</label>
+                                <textarea class="form-control" id="success_reason" name="success_reason" rows="1">{{ trade.success_reason or '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label for="notes" class="form-label">Additional Notes</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="2">{{ trade.notes or '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>
+                            Save Changes
+                        </button>
+                        <a href="{{ url_for('trade_journal') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

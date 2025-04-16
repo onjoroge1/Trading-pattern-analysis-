@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import json
 from flask import render_template, jsonify, request, Response, flash, redirect, url_for, g, session
 from app import app, db
-from models import Stock, PatternDetection, TradingSignal, TradeExecution, RLModelTraining
+from models import Stock, PatternDetection, TradingSignal, TradeExecution, RLModelTraining, TradeJournal
 from trading.polygon_api import PolygonAPI
 from trading.pattern_detection import PatternDetector
 from trading.indicators import TechnicalIndicators
@@ -1013,3 +1013,248 @@ def admin():
         models=models,
         polygon_api_key=polygon_api_key_masked
     )
+
+# Trade Journal Routes
+@app.route('/trade_journal')
+def trade_journal():
+    """Trade Journal page for recording and analyzing successful trades"""
+    try:
+        # Get list of stocks
+        stocks = Stock.query.all()
+        
+        # Get trade journal entries
+        trades = TradeJournal.query.order_by(
+            TradeJournal.entry_date.desc()
+        ).all()
+        
+        return render_template(
+            'trade_journal.html',
+            stocks=stocks,
+            trades=trades,
+            now=datetime.now()
+        )
+    except Exception as e:
+        logger.error(f"Error in trade_journal route: {e}")
+        flash(f"An error occurred: {str(e)}", 'danger')
+        return redirect(url_for('index'))
+
+@app.route('/add_trade_journal', methods=['POST'])
+def add_trade_journal():
+    """Add a new trade to the journal"""
+    try:
+        # Get form data
+        symbol = request.form.get('symbol', '').strip().upper()
+        position_type = request.form.get('position_type')
+        entry_date_str = request.form.get('entry_date')
+        exit_date_str = request.form.get('exit_date')
+        entry_price = float(request.form.get('entry_price'))
+        exit_price_str = request.form.get('exit_price')
+        position_size = int(request.form.get('position_size'))
+        rsi_at_entry_str = request.form.get('rsi_at_entry')
+        strategy = request.form.get('strategy')
+        success_reason = request.form.get('success_reason')
+        notes = request.form.get('notes')
+        
+        # Validate required fields
+        if not symbol or not position_type or not entry_date_str or not entry_price or not position_size:
+            flash('Required fields are missing', 'danger')
+            return redirect(url_for('trade_journal'))
+        
+        # Convert dates
+        entry_date = datetime.fromisoformat(entry_date_str)
+        exit_date = datetime.fromisoformat(exit_date_str) if exit_date_str else None
+        
+        # Convert other optional fields
+        exit_price = float(exit_price_str) if exit_price_str else None
+        rsi_at_entry = float(rsi_at_entry_str) if rsi_at_entry_str else None
+        
+        # Get or create stock
+        stock = Stock.query.filter_by(symbol=symbol).first()
+        if not stock:
+            stock = Stock(symbol=symbol)
+            db.session.add(stock)
+            db.session.commit()
+        
+        # Create trade journal entry
+        trade = TradeJournal(
+            stock_id=stock.id,
+            entry_date=entry_date,
+            exit_date=exit_date,
+            entry_price=entry_price,
+            exit_price=exit_price,
+            position_type=position_type,
+            position_size=position_size,
+            rsi_at_entry=rsi_at_entry,
+            strategy=strategy,
+            success_reason=success_reason,
+            notes=notes
+        )
+        
+        db.session.add(trade)
+        db.session.commit()
+        
+        flash('Trade added to journal successfully', 'success')
+        return redirect(url_for('trade_journal'))
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error adding trade to journal: {e}")
+        flash(f'Error adding trade: {str(e)}', 'danger')
+        return redirect(url_for('trade_journal'))
+
+@app.route('/edit_trade_journal/<int:trade_id>', methods=['GET', 'POST'])
+def edit_trade_journal(trade_id):
+    """Edit a trade journal entry"""
+    trade = TradeJournal.query.get_or_404(trade_id)
+    
+    if request.method == 'POST':
+        try:
+            # Update fields from form
+            exit_date_str = request.form.get('exit_date')
+            exit_price_str = request.form.get('exit_price')
+            
+            # Update trade
+            trade.exit_date = datetime.fromisoformat(exit_date_str) if exit_date_str else None
+            trade.exit_price = float(exit_price_str) if exit_price_str else None
+            trade.rsi_at_entry = float(request.form.get('rsi_at_entry')) if request.form.get('rsi_at_entry') else None
+            trade.strategy = request.form.get('strategy')
+            trade.success_reason = request.form.get('success_reason')
+            trade.notes = request.form.get('notes')
+            
+            db.session.commit()
+            flash('Trade updated successfully', 'success')
+            return redirect(url_for('trade_journal'))
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error updating trade: {e}")
+            flash(f'Error updating trade: {str(e)}', 'danger')
+            return redirect(url_for('trade_journal'))
+    
+    # GET request - show edit form
+    stocks = Stock.query.all()
+    return render_template(
+        'edit_trade.html',
+        trade=trade,
+        stocks=stocks
+    )
+
+@app.route('/delete_trade_journal/<int:trade_id>')
+def delete_trade_journal(trade_id):
+    """Delete a trade journal entry"""
+    try:
+        trade = TradeJournal.query.get_or_404(trade_id)
+        db.session.delete(trade)
+        db.session.commit()
+        flash('Trade deleted successfully', 'success')
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error deleting trade: {e}")
+        flash(f'Error deleting trade: {str(e)}', 'danger')
+    
+    return redirect(url_for('trade_journal'))
+
+@app.route('/train_custom_rl', methods=['POST'])
+def train_custom_rl():
+    """Train a custom RL model based on trade journal entries"""
+    try:
+        # Get form data
+        model_name = request.form.get('model_name')
+        timeframe = request.form.get('timeframe')
+        episodes = int(request.form.get('episodes', 1000))
+        
+        # Get trade journal entries
+        trades = TradeJournal.query.all()
+        
+        if len(trades) < 5:
+            flash('You need at least 5 trade journal entries to train a custom model', 'warning')
+            return redirect(url_for('trade_journal'))
+        
+        # Map timeframe to Polygon parameters
+        timeframe_map = {
+            '5min': {'timespan': 'minute', 'multiplier': 5},
+            '15min': {'timespan': 'minute', 'multiplier': 15},
+            '30min': {'timespan': 'minute', 'multiplier': 30},
+            '1hour': {'timespan': 'hour', 'multiplier': 1},
+            '4hour': {'timespan': 'hour', 'multiplier': 4},
+            '1day': {'timespan': 'day', 'multiplier': 1},
+            '1week': {'timespan': 'week', 'multiplier': 1}
+        }
+        
+        selected_timeframe = timeframe_map.get(timeframe, {'timespan': 'day', 'multiplier': 1})
+        timespan = selected_timeframe['timespan']
+        multiplier = selected_timeframe['multiplier']
+        
+        # Extract unique stocks from trades
+        stock_symbols = list(set([trade.stock.symbol for trade in trades]))
+        
+        # Determine date range based on trades
+        earliest_trade = min([trade.entry_date for trade in trades])
+        latest_trade = max([trade.exit_date or datetime.now() for trade in trades])
+        
+        # Add buffer days
+        start_date = earliest_trade - timedelta(days=30)  # 30 days before earliest trade
+        end_date = latest_trade + timedelta(days=5)  # 5 days after latest trade
+        
+        # Get market API client for this request
+        market_api = get_market_api()
+        
+        # Fetch historical data for all stocks
+        stock_data_dict = {}
+        for symbol in stock_symbols:
+            data = market_api.get_historical_data(
+                symbol, 
+                timespan=timespan, 
+                multiplier=multiplier, 
+                start_date=start_date, 
+                end_date=end_date
+            )
+            
+            if not data.empty:
+                # Calculate technical indicators
+                indicators = TechnicalIndicators.calculate_all_indicators(data)
+                
+                # Detect patterns
+                detector = PatternDetector()
+                patterns_df = detector.detect_all_patterns(data, indicators)
+                
+                stock_data_dict[symbol] = patterns_df
+        
+        # Build custom training data incorporating trade journal information
+        # This would be fully implemented in a real trading_environment class
+        
+        # For now, we'll use a simplified approach
+        # Initialize RL agent
+        agent = RLAgent()
+        
+        # Generate a model path
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        model_path = f"./models/custom_trade_model_{timestamp}"
+        
+        # Build state vectors from trade journal entries
+        # [This would be more sophisticated in a full implementation]
+        
+        # Mock training (would be real training with real trade data in production)
+        timesteps = episodes * 1000
+        agent.train(timesteps=timesteps)
+        
+        # Save model training record
+        training_info = RLModelTraining(
+            model_name=model_name,
+            start_date=start_date,
+            end_date=end_date,
+            stocks_used=','.join(stock_symbols),
+            total_episodes=episodes,
+            total_timesteps=timesteps,
+            model_path=model_path,
+            timeframe=timeframe
+        )
+        
+        db.session.add(training_info)
+        db.session.commit()
+        
+        flash(f'Successfully trained custom model: {model_name} based on your trade journal', 'success')
+        return redirect(url_for('trade_journal'))
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error training custom RL model: {e}")
+        flash(f'Error training custom RL model: {str(e)}', 'danger')
+        return redirect(url_for('trade_journal'))

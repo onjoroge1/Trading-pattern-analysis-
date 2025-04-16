@@ -87,3 +87,35 @@ class RLModelTraining(db.Model):
     
     def __repr__(self):
         return f"<RLModelTraining {self.model_name} at {self.created_at}>"
+
+class TradeJournal(db.Model):
+    """Model to store user trade journal entries for custom RL training"""
+    id = db.Column(db.Integer, primary_key=True)
+    stock_id = db.Column(db.Integer, db.ForeignKey('stock.id'), nullable=False)
+    entry_date = db.Column(db.DateTime, nullable=False)
+    exit_date = db.Column(db.DateTime, nullable=True)
+    entry_price = db.Column(db.Float, nullable=False)
+    exit_price = db.Column(db.Float, nullable=True)
+    position_type = db.Column(db.String(10), nullable=False)  # 'long' or 'short'
+    position_size = db.Column(db.Integer, nullable=False)
+    rsi_at_entry = db.Column(db.Float, nullable=True)
+    strategy = db.Column(db.String(50), nullable=True)  # e.g., 'doji_reversal', 'rsi_oversold', etc.
+    success_reason = db.Column(db.Text, nullable=True)  # Why the trade worked
+    notes = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Define relationship with Stock
+    stock = db.relationship('Stock', backref=db.backref('trade_journal', lazy=True))
+    
+    def pnl(self):
+        """Calculate profit/loss for this trade"""
+        if self.exit_price is None:
+            return 0
+        
+        if self.position_type == 'long':
+            return (self.exit_price - self.entry_price) * self.position_size
+        else:  # short
+            return (self.entry_price - self.exit_price) * self.position_size
+    
+    def __repr__(self):
+        return f"<TradeJournal {self.stock.symbol} {self.position_type} at {self.entry_date}>"

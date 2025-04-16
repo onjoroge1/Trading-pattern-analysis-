@@ -52,6 +52,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if request.path == url_for('trade_journal') %}active{% endif %}" href="{{ url_for('trade_journal') }}">
+                            <i class="fas fa-book me-1"></i> Trade Journal
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if request.path == url_for('fetch_data_demo') %}active{% endif %}" href="{{ url_for('fetch_data_demo') }}">
                             <i class="fas fa-database me-1"></i> Data Demo
                         </a>
