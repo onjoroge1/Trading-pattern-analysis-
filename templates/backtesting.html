@@ -55,7 +55,7 @@
                                     {% if models %}
                                         {% for model in models %}
                                             <option value="{{ model.id }}" {% if request.args.get('model_id')|int == model.id %}selected{% endif %}>
-                                                {{ model.model_name }}
+                                                {{ model.model_name }} ({{ model.timeframe or '5min' }})
                                             </option>
                                         {% endfor %}
                                     {% endif %}

@@ -116,6 +116,7 @@
                                     <th>Model Name</th>
                                     <th>Stocks Used</th>
                                     <th>Date Range</th>
+                                    <th>Timeframe</th>
                                     <th>Episodes</th>
                                     <th>Created</th>
                                     <th>Actions</th>
@@ -127,6 +128,7 @@
                                         <td>{{ session.model_name }}</td>
                                         <td>{{ session.stocks_used }}</td>
                                         <td>{{ session.start_date.strftime('%Y-%m-%d') }} to {{ session.end_date.strftime('%Y-%m-%d') }}</td>
+                                        <td>{{ session.timeframe or '5min' }}</td>
                                         <td>{{ session.total_episodes }}</td>
                                         <td>{{ session.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
                                         <td>
