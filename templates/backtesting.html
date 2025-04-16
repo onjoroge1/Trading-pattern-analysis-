@@ -155,3 +155,39 @@
     </div>
 </div>
 {% endblock %}
+
+{% block scripts %}
+<script>
+    // Set up model selection to match timeframe
+    document.addEventListener('DOMContentLoaded', function() {
+        const modelSelect = document.getElementById('model_id');
+        const timeframeSelect = document.getElementById('timeframe');
+        
+        if (modelSelect && timeframeSelect) {
+            modelSelect.addEventListener('change', function() {
+                const selectedOption = modelSelect.options[modelSelect.selectedIndex];
+                const optionText = selectedOption.textContent;
+                
+                // Extract timeframe from the model name (e.g., "Model XYZ (5min)")
+                const timeframeMatch = optionText.match(/\(([^)]+)\)/);
+                if (timeframeMatch && timeframeMatch[1]) {
+                    const modelTimeframe = timeframeMatch[1];
+                    
+                    // Find and select the matching timeframe option
+                    for (let i = 0; i < timeframeSelect.options.length; i++) {
+                        if (timeframeSelect.options[i].value === modelTimeframe) {
+                            timeframeSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            });
+            
+            // Trigger change event to set initial timeframe if model is preselected
+            if (modelSelect.selectedIndex > 0) {
+                modelSelect.dispatchEvent(new Event('change'));
+            }
+        }
+    });
+</script>
+{% endblock %}
