@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import json
-from flask import render_template, jsonify, request, Response, flash, redirect, url_for, g
+from flask import render_template, jsonify, request, Response, flash, redirect, url_for, g, session
 from app import app, db
 from models import Stock, PatternDetection, TradingSignal, TradeExecution, RLModelTraining
 from trading.polygon_api import PolygonAPI
@@ -546,7 +546,7 @@ def run_backtest():
         }
         
         # Save backtest results to session for retrieval
-        request.session['backtest_results'] = json.dumps(backtest_data)
+        session['backtest_results'] = json.dumps(backtest_data)
         
         return render_template(
             'backtest_results.html',
