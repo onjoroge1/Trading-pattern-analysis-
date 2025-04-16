@@ -1234,7 +1234,13 @@ def train_custom_rl():
         
         # Mock training (would be real training with real trade data in production)
         timesteps = episodes * 1000
-        agent.train(timesteps=timesteps)
+        # Create a mock environment with the data
+        if not stock_data_dict:
+            logger.warning("No stock data available for training")
+            stock_data_dict = {'MOCK': pd.DataFrame()}  # Empty DataFrame as fallback
+        
+        agent.create_environment(stock_data_dict)
+        agent.train(stock_data_dict=stock_data_dict, total_timesteps=timesteps)
         
         # Save model training record
         training_info = RLModelTraining(
