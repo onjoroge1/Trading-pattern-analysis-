@@ -2,4 +2,4 @@
 flask
 flask_sqlalchemy
 gunicorn
-stable-baselines3<2.0.0
+stable-baselines3>=2.0.0
