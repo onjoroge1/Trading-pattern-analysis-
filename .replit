@@ -2,6 +2,7 @@ modules = ["python-3.11"]
 
 [env]
 REPLIT_DISABLE_PACKAGE_LAYER = "1"
+REPLIT_KEEP_PACKAGE_DEV_DEPENDENCIES = "1"
 
 [nix]
 channel = "stable-24_05"
