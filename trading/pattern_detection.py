@@ -224,27 +224,39 @@ class PatternDetector:
         if len(result_df) <= 1:
             return result_df
             
+        # Create arrays to hold pattern results
+        bullish_engulfing = [False] * len(result_df)
+        bearish_engulfing = [False] * len(result_df)
+            
         for i in range(1, len(result_df)):
-            curr_open = result_df['open'].iloc[i]
-            curr_close = result_df['close'].iloc[i]
-            prev_open = result_df['open'].iloc[i-1]
-            prev_close = result_df['close'].iloc[i-1]
-            
-            # Bullish engulfing: Current candle is bullish and engulfs the previous bearish candle
-            result_df.loc[result_df.index[i], 'bullish_engulfing'] = (
-                (curr_close > curr_open) and  # Current candle is bullish
-                (prev_close < prev_open) and  # Previous candle is bearish
-                (curr_open < prev_close) and  # Current open below previous close
-                (curr_close > prev_open)      # Current close above previous open
-            )
-            
-            # Bearish engulfing: Current candle is bearish and engulfs the previous bullish candle
-            result_df.loc[result_df.index[i], 'bearish_engulfing'] = (
-                (curr_close < curr_open) and  # Current candle is bearish
-                (prev_close > prev_open) and  # Previous candle is bullish
-                (curr_open > prev_close) and  # Current open above previous close
-                (curr_close < prev_open)      # Current close below previous open
-            )
+            try:
+                curr_open = result_df['open'].iloc[i]
+                curr_close = result_df['close'].iloc[i]
+                prev_open = result_df['open'].iloc[i-1]
+                prev_close = result_df['close'].iloc[i-1]
+                
+                # Bullish engulfing: Current candle is bullish and engulfs the previous bearish candle
+                bullish_engulfing[i] = (
+                    (curr_close > curr_open) and  # Current candle is bullish
+                    (prev_close < prev_open) and  # Previous candle is bearish
+                    (curr_open < prev_close) and  # Current open below previous close
+                    (curr_close > prev_open)      # Current close above previous open
+                )
+                
+                # Bearish engulfing: Current candle is bearish and engulfs the previous bullish candle
+                bearish_engulfing[i] = (
+                    (curr_close < curr_open) and  # Current candle is bearish
+                    (prev_close > prev_open) and  # Previous candle is bullish
+                    (curr_open > prev_close) and  # Current open above previous close
+                    (curr_close < prev_open)      # Current close below previous open
+                )
+            except Exception as e:
+                # Just skip this iteration if there's any error
+                continue
+        
+        # Assign the pattern results to the dataframe
+        result_df['bullish_engulfing'] = bullish_engulfing
+        result_df['bearish_engulfing'] = bearish_engulfing
         
         return result_df
     
@@ -266,37 +278,49 @@ class PatternDetector:
         # Skip if dataframe is too small for pattern detection
         if len(result_df) < 3:
             return result_df
+        
+        # Create arrays to hold pattern results
+        morning_star = [False] * len(result_df)
+        evening_star = [False] * len(result_df)
             
         # We need at least 3 candles for star patterns
         for i in range(2, len(result_df)):
-            # Get the three candles for the pattern
-            first_open = result_df['open'].iloc[i-2]
-            first_close = result_df['close'].iloc[i-2]
-            second_open = result_df['open'].iloc[i-1]
-            second_close = result_df['close'].iloc[i-1]
-            third_open = result_df['open'].iloc[i]
-            third_close = result_df['close'].iloc[i]
-            
-            # Calculate body sizes
-            first_body = abs(first_close - first_open)
-            second_body = abs(second_close - second_open)
-            third_body = abs(third_close - third_open)
-            
-            # Morning Star: First bearish, second small body (doji-like), third bullish
-            if (first_close < first_open and  # First candle bearish
-                second_body < 0.3 * first_body and  # Second candle small body
-                third_close > third_open and  # Third candle bullish
-                third_close > (first_open + first_close) / 2):  # Third closes above midpoint of first
+            try:
+                # Get the three candles for the pattern
+                first_open = result_df['open'].iloc[i-2]
+                first_close = result_df['close'].iloc[i-2]
+                second_open = result_df['open'].iloc[i-1]
+                second_close = result_df['close'].iloc[i-1]
+                third_open = result_df['open'].iloc[i]
+                third_close = result_df['close'].iloc[i]
                 
-                result_df.loc[result_df.index[i], 'morning_star'] = True
-            
-            # Evening Star: First bullish, second small body (doji-like), third bearish
-            if (first_close > first_open and  # First candle bullish
-                second_body < 0.3 * first_body and  # Second candle small body
-                third_close < third_open and  # Third candle bearish
-                third_close < (first_open + first_close) / 2):  # Third closes below midpoint of first
+                # Calculate body sizes
+                first_body = abs(first_close - first_open)
+                second_body = abs(second_close - second_open)
+                third_body = abs(third_close - third_open)
                 
-                result_df.loc[result_df.index[i], 'evening_star'] = True
+                # Morning Star: First bearish, second small body (doji-like), third bullish
+                if (first_close < first_open and  # First candle bearish
+                    second_body < 0.3 * first_body and  # Second candle small body
+                    third_close > third_open and  # Third candle bullish
+                    third_close > (first_open + first_close) / 2):  # Third closes above midpoint of first
+                    
+                    morning_star[i] = True
+                
+                # Evening Star: First bullish, second small body (doji-like), third bearish
+                if (first_close > first_open and  # First candle bullish
+                    second_body < 0.3 * first_body and  # Second candle small body
+                    third_close < third_open and  # Third candle bearish
+                    third_close < (first_open + first_close) / 2):  # Third closes below midpoint of first
+                    
+                    evening_star[i] = True
+            except Exception as e:
+                # Just skip this iteration if there's any error
+                continue
+        
+        # Assign the pattern results to the dataframe
+        result_df['morning_star'] = morning_star
+        result_df['evening_star'] = evening_star
         
         return result_df
     
@@ -351,35 +375,47 @@ class PatternDetector:
         # Skip if dataframe is too small for pattern detection
         if len(result_df) <= 1:
             return result_df
+        
+        # Create arrays to hold pattern results
+        piercing_line = [False] * len(result_df)
+        dark_cloud_cover = [False] * len(result_df)
             
         for i in range(1, len(result_df)):
-            prev_open = result_df['open'].iloc[i-1]
-            prev_close = result_df['close'].iloc[i-1]
-            prev_body = abs(prev_close - prev_open)
-            
-            curr_open = result_df['open'].iloc[i]
-            curr_close = result_df['close'].iloc[i]
-            curr_body = abs(curr_close - curr_open)
-            
-            # Piercing Line: Previous bearish, current bullish open below previous low,
-            # close above the midpoint of previous candle
-            if (prev_close < prev_open and  # Previous bearish
-                curr_close > curr_open and  # Current bullish
-                curr_open < prev_close and  # Current opens below previous close
-                curr_close > (prev_open + prev_close) / 2 and  # Current closes above midpoint
-                curr_body > 0.6 * prev_body):  # Current body size significant
+            try:
+                prev_open = result_df['open'].iloc[i-1]
+                prev_close = result_df['close'].iloc[i-1]
+                prev_body = abs(prev_close - prev_open)
                 
-                result_df.loc[result_df.index[i], 'piercing_line'] = True
-            
-            # Dark Cloud Cover: Previous bullish, current bearish open above previous high,
-            # close below the midpoint of previous candle
-            if (prev_close > prev_open and  # Previous bullish
-                curr_close < curr_open and  # Current bearish
-                curr_open > prev_close and  # Current opens above previous close
-                curr_close < (prev_open + prev_close) / 2 and  # Current closes below midpoint
-                curr_body > 0.6 * prev_body):  # Current body size significant
+                curr_open = result_df['open'].iloc[i]
+                curr_close = result_df['close'].iloc[i]
+                curr_body = abs(curr_close - curr_open)
                 
-                result_df.loc[result_df.index[i], 'dark_cloud_cover'] = True
+                # Piercing Line: Previous bearish, current bullish open below previous low,
+                # close above the midpoint of previous candle
+                if (prev_close < prev_open and  # Previous bearish
+                    curr_close > curr_open and  # Current bullish
+                    curr_open < prev_close and  # Current opens below previous close
+                    curr_close > (prev_open + prev_close) / 2 and  # Current closes above midpoint
+                    curr_body > 0.6 * prev_body):  # Current body size significant
+                    
+                    piercing_line[i] = True
+                
+                # Dark Cloud Cover: Previous bullish, current bearish open above previous high,
+                # close below the midpoint of previous candle
+                if (prev_close > prev_open and  # Previous bullish
+                    curr_close < curr_open and  # Current bearish
+                    curr_open > prev_close and  # Current opens above previous close
+                    curr_close < (prev_open + prev_close) / 2 and  # Current closes below midpoint
+                    curr_body > 0.6 * prev_body):  # Current body size significant
+                    
+                    dark_cloud_cover[i] = True
+            except Exception as e:
+                # Just skip this iteration if there's any error
+                continue
+        
+        # Assign the pattern results to the dataframe
+        result_df['piercing_line'] = piercing_line
+        result_df['dark_cloud_cover'] = dark_cloud_cover
         
         return result_df
     
@@ -401,30 +437,42 @@ class PatternDetector:
         # Skip if dataframe is too small for pattern detection
         if len(result_df) < 3:
             return result_df
+        
+        # Create arrays to hold pattern results
+        three_white_soldiers = [False] * len(result_df)
+        three_black_crows = [False] * len(result_df)
             
         # Need at least 3 candles for these patterns
         for i in range(2, len(result_df)):
-            # Check Three White Soldiers
-            if (result_df['close'].iloc[i-2] > result_df['open'].iloc[i-2] and  # First bullish
-                result_df['close'].iloc[i-1] > result_df['open'].iloc[i-1] and  # Second bullish
-                result_df['close'].iloc[i] > result_df['open'].iloc[i] and      # Third bullish
-                result_df['close'].iloc[i] > result_df['close'].iloc[i-1] and   # Each close higher than previous
-                result_df['close'].iloc[i-1] > result_df['close'].iloc[i-2] and
-                result_df['open'].iloc[i] > result_df['open'].iloc[i-1] and     # Each open higher than previous
-                result_df['open'].iloc[i-1] > result_df['open'].iloc[i-2]):
-                
-                result_df.loc[result_df.index[i], 'three_white_soldiers'] = True
-                
-            # Check Three Black Crows
-            if (result_df['close'].iloc[i-2] < result_df['open'].iloc[i-2] and  # First bearish
-                result_df['close'].iloc[i-1] < result_df['open'].iloc[i-1] and  # Second bearish
-                result_df['close'].iloc[i] < result_df['open'].iloc[i] and      # Third bearish
-                result_df['close'].iloc[i] < result_df['close'].iloc[i-1] and   # Each close lower than previous
-                result_df['close'].iloc[i-1] < result_df['close'].iloc[i-2] and
-                result_df['open'].iloc[i] < result_df['open'].iloc[i-1] and     # Each open lower than previous
-                result_df['open'].iloc[i-1] < result_df['open'].iloc[i-2]):
-                
-                result_df.loc[result_df.index[i], 'three_black_crows'] = True
+            try:
+                # Check Three White Soldiers
+                if (result_df['close'].iloc[i-2] > result_df['open'].iloc[i-2] and  # First bullish
+                    result_df['close'].iloc[i-1] > result_df['open'].iloc[i-1] and  # Second bullish
+                    result_df['close'].iloc[i] > result_df['open'].iloc[i] and      # Third bullish
+                    result_df['close'].iloc[i] > result_df['close'].iloc[i-1] and   # Each close higher than previous
+                    result_df['close'].iloc[i-1] > result_df['close'].iloc[i-2] and
+                    result_df['open'].iloc[i] > result_df['open'].iloc[i-1] and     # Each open higher than previous
+                    result_df['open'].iloc[i-1] > result_df['open'].iloc[i-2]):
+                    
+                    three_white_soldiers[i] = True
+                    
+                # Check Three Black Crows
+                if (result_df['close'].iloc[i-2] < result_df['open'].iloc[i-2] and  # First bearish
+                    result_df['close'].iloc[i-1] < result_df['open'].iloc[i-1] and  # Second bearish
+                    result_df['close'].iloc[i] < result_df['open'].iloc[i] and      # Third bearish
+                    result_df['close'].iloc[i] < result_df['close'].iloc[i-1] and   # Each close lower than previous
+                    result_df['close'].iloc[i-1] < result_df['close'].iloc[i-2] and
+                    result_df['open'].iloc[i] < result_df['open'].iloc[i-1] and     # Each open lower than previous
+                    result_df['open'].iloc[i-1] < result_df['open'].iloc[i-2]):
+                    
+                    three_black_crows[i] = True
+            except Exception as e:
+                # Just skip this iteration if there's any error
+                continue
+        
+        # Assign the pattern results to the dataframe
+        result_df['three_white_soldiers'] = three_white_soldiers
+        result_df['three_black_crows'] = three_black_crows
         
         return result_df
     
