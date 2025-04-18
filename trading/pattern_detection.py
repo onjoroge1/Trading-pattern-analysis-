@@ -220,6 +220,10 @@ class PatternDetector:
         result_df['bullish_engulfing'] = False
         result_df['bearish_engulfing'] = False
         
+        # Skip pattern detection if dataframe is empty or has only one row
+        if len(result_df) <= 1:
+            return result_df
+            
         for i in range(1, len(result_df)):
             curr_open = result_df['open'].iloc[i]
             curr_close = result_df['close'].iloc[i]
@@ -259,6 +263,10 @@ class PatternDetector:
         result_df['morning_star'] = False
         result_df['evening_star'] = False
         
+        # Skip if dataframe is too small for pattern detection
+        if len(result_df) < 3:
+            return result_df
+            
         # We need at least 3 candles for star patterns
         for i in range(2, len(result_df)):
             # Get the three candles for the pattern
@@ -340,6 +348,10 @@ class PatternDetector:
         result_df['piercing_line'] = False
         result_df['dark_cloud_cover'] = False
         
+        # Skip if dataframe is too small for pattern detection
+        if len(result_df) <= 1:
+            return result_df
+            
         for i in range(1, len(result_df)):
             prev_open = result_df['open'].iloc[i-1]
             prev_close = result_df['close'].iloc[i-1]
@@ -386,6 +398,10 @@ class PatternDetector:
         result_df['three_white_soldiers'] = False
         result_df['three_black_crows'] = False
         
+        # Skip if dataframe is too small for pattern detection
+        if len(result_df) < 3:
+            return result_df
+            
         # Need at least 3 candles for these patterns
         for i in range(2, len(result_df)):
             # Check Three White Soldiers
